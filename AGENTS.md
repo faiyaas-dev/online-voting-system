@@ -393,7 +393,7 @@ Full scope for this pass: **Must + Should + Could**. This is genuinely a multi-d
 | Agent | Source path | Used in phase |
 |---|---|---|
 | Workflow Architect | `specialized/specialized-workflow-architect.md` | 1 |
-| Software Architect | `engineering/engineering-software-architect.md` | 1, 2 |
+| Software Architect | `engineering/engineering-software-architect.md` | 2, 1 |
 | Backend Architect | `engineering/engineering-backend-architect.md` | 2, 3 |
 | Database Optimizer | `engineering/engineering-database-optimizer.md` | 2, 3 |
 | Frontend Developer | `engineering/engineering-frontend-developer.md` | 4 |
