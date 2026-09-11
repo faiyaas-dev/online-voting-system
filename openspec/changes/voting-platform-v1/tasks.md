@@ -25,6 +25,7 @@ create policy institutions_select on institutions
 **Depends on**: `my_role()` and `my_institution_id()` helper functions (Must-tier).
 
 **Phase 6 test cases**:
+
 - **PA-5**: Voter queries `SELECT * FROM institutions` → only their own institution row returned.
 - Verify `platform_admin` sees all institution rows.
 
@@ -85,6 +86,7 @@ $$ language plpgsql security definer stable;
 ```
 
 **Phase 6 test cases**:
+
 - **PA-1**: Call as `institution_admin` → expect `Access denied` exception.
 - **PA-2**: As `platform_admin`, run `SELECT * FROM votes` → expect 0 rows (raw access still blocked).
 - **PA-3**: As `platform_admin`, run `SELECT * FROM roster` → expect 0 rows (PII still blocked).
@@ -125,6 +127,7 @@ create index idx_roster_import_errors_institution_imported
 ```
 
 **Phase 6 test cases**:
+
 - **RIE-1**: Inst A admin queries → only Inst A rows. Inst B rows invisible.
 - **RIE-2**: Voter / department_admin queries → 0 rows.
 - **RIE-3**: Anonymous / unauthenticated query → 0 rows.
@@ -137,6 +140,7 @@ create index idx_roster_import_errors_institution_imported
 **File**: `supabase/functions/roster-csv-validate/index.ts`
 
 **Contract**:
+
 - **Input**: Multipart form upload with CSV file + `institution_id` parameter.
 - **Auth**: Requires valid JWT. Edge Function verifies caller is `institution_admin` for the given `institution_id` using the `service_role` key internally.
 - **Processing**: For each CSV row:
@@ -150,7 +154,7 @@ create index idx_roster_import_errors_institution_imported
 **Validation rules**:
 
 | Rule | `error_reason` value |
-|---|---|
+| --- | --- |
 | Missing/empty email | `missing_email` |
 | Malformed email | `invalid_email_format` |
 | Missing/empty department | `missing_department` |
@@ -161,6 +165,7 @@ create index idx_roster_import_errors_institution_imported
 | Email already exists in `roster` for this institution | `duplicate_email_existing` |
 
 **Implementation notes**:
+
 - Parse CSV using a streaming parser (e.g., `csv-parse`) to handle large files.
 - Process in a single DB transaction: if the batch has critical structural issues (no headers, wrong encoding), reject the entire upload before inserting anything.
 - The `service_role` key never leaves the Edge Function runtime — it is set via `supabase secrets set SERVICE_ROLE_KEY=...`.
@@ -258,6 +263,7 @@ create policy storage_candidate_photo_delete
 ```
 
 **Phase 6 test cases**:
+
 - **CP-1**: Inst A voter reads Inst B candidate photo → 403.
 - **CP-2**: Voter reads pending candidate photo (not their own) → 403.
 - **CP-3**: Candidate uploads with Inst B's `institution_id` in path → RLS violation.
@@ -275,6 +281,7 @@ create policy storage_candidate_photo_delete
 **File**: `supabase/functions/validate-candidate-photo/index.ts`
 
 **Contract**:
+
 - Triggered as a Storage event hook on `INSERT` to `candidate-photos` bucket.
 - Reads the first 12 bytes of the uploaded object.
 - Validates that the magic bytes match the declared `content-type`:
@@ -311,8 +318,9 @@ Tasks 1, 2, and 3 are independent of each other and can be parallelized. Within 
 All test cases from `design.md` §5.4, §6.6, §7.7 consolidated:
 
 ### Platform Admin RPC (PA-*)
+
 | ID | Description | Expected result |
-|---|---|---|
+| --- | --- | --- |
 | PA-1 | `institution_admin` calls `get_platform_metrics()` | `Access denied` exception |
 | PA-2 | `platform_admin` runs `SELECT * FROM votes` | 0 rows |
 | PA-3 | `platform_admin` runs `SELECT * FROM roster` | 0 rows |
@@ -320,16 +328,18 @@ All test cases from `design.md` §5.4, §6.6, §7.7 consolidated:
 | PA-5 | Voter queries `SELECT * FROM institutions` | Only own institution row |
 
 ### Roster Import Errors (RIE-*)
+
 | ID | Description | Expected result |
-|---|---|---|
+| --- | --- | --- |
 | RIE-1 | Inst A admin queries `roster_import_errors` | Only Inst A rows |
 | RIE-2 | Voter / dept_admin queries `roster_import_errors` | 0 rows |
 | RIE-3 | Anon / unauthenticated queries `roster_import_errors` | 0 rows |
 | RIE-4 | Inst A admin inserts with Inst B's `institution_id` | RLS violation |
 
 ### Candidate Photos (CP-*)
+
 | ID | Description | Expected result |
-|---|---|---|
+| --- | --- | --- |
 | CP-1 | Inst A voter reads Inst B candidate photo | 403 |
 | CP-2 | Voter reads pending candidate photo (not their own) | 403 |
 | CP-3 | Candidate uploads with wrong `institution_id` in path | RLS violation |

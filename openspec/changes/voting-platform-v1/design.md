@@ -5,7 +5,9 @@ This document maps the user-facing paths and evaluates them against the current 
 ---
 
 ## 1. Voter First Login → Roster Match → Vote
+
 **Flow**:
+
 1. User requests OTP via email.
 2. User clicks magic link, authenticating via Supabase Auth.
 3. Client application calls `supabase.rpc('claim_voter_profile', { p_institution_id })`.
@@ -15,29 +17,37 @@ This document maps the user-facing paths and evaluates them against the current 
 7. Voter submits vote (validated by RLS and UNIQUE constraints).
 
 **RLS Coverage Check**:
+
 - ✅ `claim_voter_profile` securely handles the roster check and profile creation using `SECURITY DEFINER`, bypassing the lack of an `insert` policy on `profiles`.
 - ✅ `elections_select` ensures voters only see relevant elections.
 - ✅ `votes_insert` strictly enforces that the election is open and the voter is eligible.
 - ✅ `UNIQUE(voter_id, election_id)` on `votes` prevents double voting.
 
 ## 2. Institution Self-Serve Signup
+
 **Flow**:
+
 1. User fills out an institution registration form (Name, Slug, Admin Email).
 2. User authenticates via OTP.
 3. System creates a new row in `institutions`.
 4. System creates a corresponding row in `profiles` with `role = 'institution_admin'`.
 
 **RLS Coverage Check (🚨 GAP DETECTED)**:
+
 - ❌ **Missing Insert Policies**: How do the `institutions` and `profiles` rows get created? `ARCHITECTURE.md` defines `profiles_select` and `profiles_update_own`, but **no insert policy for profiles**. Furthermore, the `institutions` table has no RLS enabled or policies defined. If the client performs these inserts, they will fail on `profiles` (due to missing policy) or succeed indiscriminately on `institutions` (if RLS is disabled).
 - **Resolution Required**: We must either define a `SECURITY DEFINER` RPC (e.g., `register_institution(name, slug)`) that handles both inserts securely, or add appropriate insert RLS policies for self-serve signup.
 
 ## 3. Department Admin Nomination Approval
+
 **Flow**:
+
 1. Department Admin views pending candidates in their department's elections.
 2. Admin updates the candidate's status to `approved` or `rejected`.
 
 **RLS Coverage Check (🚨 GAP DETECTED)**:
+
 - ❌ **Over-permissioned Update Policy**: The `candidates_admin_update` policy in `ARCHITECTURE.md` §4 reads:
+
   ```sql
   create policy candidates_admin_update on candidates
     for update using (
@@ -49,26 +59,30 @@ This document maps the user-facing paths and evaluates them against the current 
       )
     );
   ```
-  This policy allows a `department_admin` to approve/reject candidates for **ANY** election within their institution, not just elections scoped to their own department. 
+
+  This policy allows a `department_admin` to approve/reject candidates for **ANY** election within their institution, not just elections scoped to their own department.
 - **Resolution Required**: The policy must be tightened to include an extra check for department admins:
   `or (my_role() = 'department_admin' and e.scope_department = (select department from profiles where id = auth.uid()))`.
 
 ## 4. Platform Admin Cross-Tenant View
+
 **Flow**:
+
 1. Platform Admin logs in.
 2. Admin accesses a global dashboard.
 3. Client requests aggregate metrics across all institutions.
 
 **RLS Coverage Check (🚨 GAP DETECTED)**:
+
 - ❌ **Missing RPC and Institutions RLS**: `ARCHITECTURE.md` mentions implementing a second RPC for platform admins (like `get_election_results`), but it does not specify how Platform Admins view the list of `institutions` itself. The `institutions` table currently lacks RLS. If we enable RLS on `institutions`, we need a `select` policy that allows `platform_admin` to read all rows, and `institution_admin`/`voter` to read only their own institution's row.
-- **Resolution Required**: 
+- **Resolution Required**:
   - Enable RLS on `institutions`.
   - Add `institutions_select` policy.
   - Draft the specific `get_platform_metrics()` RPC in the final SQL implementation.
 
 ---
 
-# Could-Tier Extensions — Detailed Design
+## Could-Tier Extensions — Detailed Design
 
 > **IMPORTANT**: Sections 5–7 below are **additive extensions only**. They do not modify the locked base schema (`institutions`, `profiles`, `roster`, `elections`, `candidates`, `votes`) or any existing RLS policy defined in AGENTS.md / ARCHITECTURE.md §3–4. All references to those tables are read-only joins inside `SECURITY DEFINER` functions.
 
@@ -140,6 +154,7 @@ $$ language plpgsql security definer stable;
 ### 5.3 Institutions table RLS (additive — institutions table has no existing policies)
 
 The `institutions` table currently has RLS disabled and no policies. We need to:
+
 1. Enable RLS on `institutions`.
 2. Add a `SELECT` policy so platform_admins can see all institutions (for the dashboard), while institution_admins / voters see only their own.
 3. Add an `INSERT` policy for the self-serve signup flow (via a separate RPC — see gap in §2 above; this policy is a safety net if called outside the RPC).
@@ -160,7 +175,7 @@ create policy institutions_select on institutions
 ### 5.4 Cross-tenant leak scenarios this prevents (→ Phase 6 test cases)
 
 | # | Threat scenario | Prevention mechanism | Test case |
-|---|---|---|---|
+| --- | --- | --- | --- |
 | PA-1 | Non-platform-admin calls `get_platform_metrics()` and sees all institutions' data | `my_role() != 'platform_admin'` guard raises exception | Call RPC as `institution_admin` → expect `Access denied` exception |
 | PA-2 | Platform admin reads raw `votes` table to see individual ballots across tenants | RPC returns aggregates only; `votes_own_read` RLS still blocks raw `SELECT` for platform_admin (they have no `voter_id` match) | Platform admin runs `SELECT * FROM votes` → expect 0 rows |
 | PA-3 | Platform admin reads raw `roster` table to harvest student emails/PII | `roster_admin_access` policy blocks platform_admin (only `institution_admin` is in the `using` clause) | Platform admin runs `SELECT * FROM roster` → expect 0 rows |
@@ -219,7 +234,7 @@ create index idx_roster_import_errors_institution_imported
 The Edge Function `roster-csv-validate` processes the uploaded CSV. For each row, it checks:
 
 | Validation rule | Error reason string | Example |
-|---|---|---|
+| --- | --- | --- |
 | Missing or empty `email` column | `missing_email` | Row has blank email cell |
 | Malformed email (no `@`, invalid format) | `invalid_email_format` | `"john.doe.com"` |
 | Missing or empty `department` column | `missing_department` | Row has blank department |
@@ -230,6 +245,7 @@ The Edge Function `roster-csv-validate` processes the uploaded CSV. For each row
 | Conflict with existing `roster` row (unique constraint would fire) | `duplicate_email_existing` | Email already in `roster` table for this institution |
 
 **Processing model**: The Edge Function uses the `service_role` key (never exposed to the client) and processes the CSV row by row in a single transaction:
+
 1. Parse CSV.
 2. For each row: validate → if invalid, `INSERT INTO roster_import_errors`; if valid, `INSERT INTO roster` (via `ON CONFLICT DO UPDATE` if the institution wants to refresh roster data).
 3. Return a summary: `{ inserted: N, errors: M, error_ids: [...] }`.
@@ -238,7 +254,7 @@ The Edge Function `roster-csv-validate` processes the uploaded CSV. For each row
 ### 6.6 Cross-tenant leak scenarios (→ Phase 6 test cases)
 
 | # | Threat scenario | Prevention mechanism | Test case |
-|---|---|---|---|
+| --- | --- | --- | --- |
 | RIE-1 | Institution Admin from Inst A queries `roster_import_errors` and sees Inst B's failed rows (leaking emails, roll numbers from Inst B's CSV) | `institution_id = my_institution_id()` in policy | Inst A admin runs `SELECT * FROM roster_import_errors` → sees only Inst A rows; zero rows from Inst B |
 | RIE-2 | Voter or Department Admin queries `roster_import_errors` and sees raw CSV data from their own institution | `my_role() in ('institution_admin')` restricts to institution_admin only | Voter/dept_admin runs `SELECT * FROM roster_import_errors` → expect 0 rows |
 | RIE-3 | Unauthenticated / anon user queries `roster_import_errors` | RLS enabled + no anon policy = automatic deny | Anon request `SELECT * FROM roster_import_errors` → expect 0 rows |
@@ -251,6 +267,7 @@ The Edge Function `roster-csv-validate` processes the uploaded CSV. For each row
 ### 7.1 Design rationale
 
 Candidates upload a photo during self-nomination. Photo visibility must track candidate status:
+
 - **`pending`**: Only the candidate themselves and institution/department admins can view.
 - **`approved`**: Publicly readable (voters viewing the ballot need it).
 - **`rejected`**: Only the candidate themselves and admins can view (same as pending).
@@ -259,7 +276,7 @@ The `photo_path` column on `candidates` (already in the locked schema) stores th
 
 ### 7.2 Storage bucket configuration
 
-```
+```text
 Bucket name: candidate-photos
 Public:       false  (access controlled by policies, not public URL)
 File size limit: 2 MB (2097152 bytes)
@@ -268,11 +285,12 @@ Allowed MIME types: image/jpeg, image/png, image/webp
 
 ### 7.3 Storage path convention
 
-```
+```text
 candidate-photos/{institution_id}/{election_id}/{user_id}.{ext}
 ```
 
 This path structure:
+
 - Scopes files by institution (tenant isolation in the path itself).
 - Scopes by election (a user could be a candidate in multiple elections).
 - Uses `user_id` as the filename (one photo per nomination, unique per `(election_id, user_id)`).
@@ -372,7 +390,7 @@ create policy storage_candidate_photo_delete
 Client-side validation is **never sufficient**. The following are enforced server-side:
 
 | Constraint | Enforcement point | Mechanism |
-|---|---|---|
+| --- | --- | --- |
 | Max file size: 2 MB | Supabase Storage bucket config | `file_size_limit: 2097152` in bucket creation |
 | Allowed types: JPEG, PNG, WebP | Supabase Storage bucket config | `allowed_mime_types: ['image/jpeg', 'image/png', 'image/webp']` |
 | Magic byte validation (content matches declared MIME) | Edge Function hook on `INSERT` to `storage.objects` | Read first 12 bytes, validate signature matches declared content-type; reject if mismatch |
@@ -387,7 +405,7 @@ Client-side validation is **never sufficient**. The following are enforced serve
 ### 7.7 Cross-tenant leak scenarios (→ Phase 6 test cases)
 
 | # | Threat scenario | Prevention mechanism | Test case |
-|---|---|---|---|
+| --- | --- | --- | --- |
 | CP-1 | Voter from Inst A attempts to view a candidate photo from Inst B by guessing the Storage path | `(storage.foldername(name))[1] = my_institution_id()::text` blocks cross-institution reads | Inst A voter attempts `GET /storage/v1/object/candidate-photos/{Inst_B_id}/...` → expect 403 |
 | CP-2 | Voter views a pending/rejected candidate's photo in their own institution | Storage SELECT policy requires `c.status = 'approved'` for general access, or the viewer must be the candidate/admin | Voter attempts to download pending candidate photo → expect 403 |
 | CP-3 | Candidate from Inst A uploads a photo with a path containing Inst B's `institution_id` | INSERT policy checks `(storage.foldername(name))[1] = my_institution_id()::text` | Candidate crafts upload path with wrong institution_id → expect RLS violation |
@@ -402,7 +420,7 @@ Client-side validation is **never sufficient**. The following are enforced serve
 ## Appendix: Summary of all new database objects
 
 | Object | Type | Could-tier feature |
-|---|---|---|
+| --- | --- | --- |
 | `get_platform_metrics()` | RPC (function) | Platform Admin dashboard |
 | `institutions_select` | RLS policy on `institutions` | Platform Admin + general tenant isolation |
 | `roster_import_errors` | Table (locked schema, reproduced) | CSV validation |
