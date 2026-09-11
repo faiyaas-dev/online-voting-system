@@ -1,0 +1,19 @@
+roll_no,email,department,year,full_name
+CS2401,arjun.kumar@demo-college.edu,Computer Science,1,Arjun Kumar
+CS2402,priya.sharma@demo-college.edu,Computer Science,1,Priya Sharma
+CS2403,rohit.verma@demo-college.edu,Computer Science,2,Rohit Verma
+CS2404,ananya.nair@demo-college.edu,Computer Science,2,Ananya Nair
+CS2405,karthik.rajan@demo-college.edu,Computer Science,3,Karthik Rajan
+CS2406,divya.menon@demo-college.edu,Computer Science,3,Divya Menon
+CS2407,suresh.iyer@demo-college.edu,Computer Science,4,Suresh Iyer
+EC2401,meena.pillai@demo-college.edu,Electronics,1,Meena Pillai
+EC2402,vikram.bose@demo-college.edu,Electronics,1,Vikram Bose
+EC2403,shalini.das@demo-college.edu,Electronics,2,Shalini Das
+EC2404,arun.ghosh@demo-college.edu,Electronics,2,Arun Ghosh
+EC2405,pooja.mishra@demo-college.edu,Electronics,3,Pooja Mishra
+ME2401,rajesh.pandey@demo-college.edu,Mechanical,1,Rajesh Pandey
+ME2402,lakshmi.reddy@demo-college.edu,Mechanical,2,Lakshmi Reddy
+ME2403,aman.singh@demo-college.edu,Mechanical,3,Aman Singh
+CE2401,nisha.joshi@demo-college.edu,Civil,1,Nisha Joshi
+CE2402,deepak.naik@demo-college.edu,Civil,2,Deepak Naik
+CE2403,kavitha.rao@demo-college.edu,Civil,3,Kavitha Rao
