@@ -1,8 +1,9 @@
 import { serve } from "https://deno.land/std@0.192.0/http/server.ts"
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.33.1"
 
+// F-07: CORS scoped to app origin
 const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Origin': Deno.env.get('APP_ORIGIN') ?? '',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
@@ -12,6 +13,30 @@ serve(async (req) => {
   }
 
   try {
+    // F-08: Verify webhook secret — only Supabase DB webhooks should call this
+    const webhookSecret = Deno.env.get('WEBHOOK_SECRET')
+    const authHeader = req.headers.get('Authorization')
+
+    if (webhookSecret) {
+      // If a webhook secret is configured, verify it
+      if (!authHeader || authHeader !== `Bearer ${webhookSecret}`) {
+        return new Response(JSON.stringify({ error: 'Unauthorized: invalid webhook secret' }), {
+          status: 401,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        })
+      }
+    } else {
+      // Fallback: verify the request comes with the service role key
+      // This is less secure but works if webhook secret isn't set yet
+      const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
+      if (!authHeader || !serviceKey || authHeader !== `Bearer ${serviceKey}`) {
+        return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+          status: 401,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        })
+      }
+    }
+
     const payload = await req.json()
     // Triggered by Database Webhook on storage.objects INSERT
     if (payload.record?.bucket_id !== 'candidate-photos') {

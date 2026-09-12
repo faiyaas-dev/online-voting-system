@@ -45,27 +45,14 @@ export default function SignupPage() {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) { setError('Auth failed'); setLoading(false); return }
 
-    // Create institution
-    const { data: inst, error: instError } = await supabase
-      .from('institutions')
-      .insert({ name: institutionName.trim(), slug: slug.trim() })
-      .select()
-      .single()
-
-    if (instError) { setError(instError.message); setLoading(false); return }
-
-    // Create institution_admin profile
-    const { error: profileError } = await supabase
-      .from('profiles')
-      .insert({
-        id: user.id,
-        institution_id: inst.id,
-        role: 'institution_admin',
-        full_name: adminEmail.split('@')[0],
-      })
+    // F-01/F-10 fix: Use SECURITY DEFINER RPC — role is hardcoded server-side
+    const { error: rpcError } = await supabase.rpc('create_institution_and_admin', {
+      p_name: institutionName.trim(),
+      p_slug: slug.trim(),
+    })
 
     setLoading(false)
-    if (profileError) { setError(profileError.message); return }
+    if (rpcError) { setError(rpcError.message); return }
     router.push('/institution-admin')
   }
 

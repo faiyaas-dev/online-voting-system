@@ -39,8 +39,11 @@ export default function RosterUploadForm({ institutionId }: { institutionId: str
     setLoading(true)
 
     const supabase = createClient()
+    // F-13: Use getUser() for auth verification, then get session for access_token
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) { setUploadError('Not authenticated'); setLoading(false); return }
     const { data: { session } } = await supabase.auth.getSession()
-    if (!session) { setUploadError('Not authenticated'); setLoading(false); return }
+    if (!session) { setUploadError('No active session'); setLoading(false); return }
 
     const form = new FormData()
     form.append('file', file)

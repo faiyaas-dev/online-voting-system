@@ -26,8 +26,11 @@ export default function InviteDeptAdminForm({ institutionId }: { institutionId: 
     // Simpler approach: store invitation in a temp table or use Supabase Admin API.
     // 
     // Since we can't expose service_role here, we call an Edge Function.
+    // F-13: Use getUser() for auth verification, then get session for access_token
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) { setError('Not authenticated'); setLoading(false); return }
     const { data: { session } } = await supabase.auth.getSession()
-    if (!session) { setError('Not authenticated'); setLoading(false); return }
+    if (!session) { setError('No active session'); setLoading(false); return }
 
     const res = await fetch(
       `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/invite-dept-admin`,
