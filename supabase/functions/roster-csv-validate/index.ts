@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.192.0/http/server.ts"
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.33.1"
 import { parse } from "https://esm.sh/csv-parse@5.5.0/sync"
+import { validateRosterRow } from "./validation.ts"
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': Deno.env.get('APP_ORIGIN') ?? '',
@@ -58,27 +59,14 @@ serve(async (req) => {
     const validRows = []
     const errorRows = []
     
-    const seenEmails = new Set()
-    const seenRollNos = new Set()
+    const seenEmails = new Set<string>()
+    const seenRollNos = new Set<string>()
 
     for (let i = 0; i < records.length; i++) {
       const row = records[i]
       const actualRowNum = i + 2 // Assuming header is row 1
-      let errorReason = null
-
-      const email = row.email?.trim()
-      const department = row.department?.trim()
-      const roll_no = row.roll_no?.trim()
-      const year = parseInt(row.year, 10)
-      const full_name = row.full_name?.trim()
-
-      if (!email) errorReason = 'missing_email'
-      else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) errorReason = 'invalid_email_format'
-      else if (!department) errorReason = 'missing_department'
-      else if (!roll_no) errorReason = 'missing_roll_no'
-      else if (isNaN(year)) errorReason = 'invalid_year'
-      else if (seenEmails.has(email.toLowerCase())) errorReason = 'duplicate_email_in_batch'
-      else if (seenRollNos.has(roll_no.toLowerCase())) errorReason = 'duplicate_roll_no_in_batch'
+      
+      const errorReason = validateRosterRow(row, seenEmails, seenRollNos)
 
       if (errorReason) {
         errorRows.push({
@@ -88,6 +76,12 @@ serve(async (req) => {
           error_reason: errorReason
         })
       } else {
+        const email = row.email?.trim()
+        const department = row.department?.trim()
+        const roll_no = row.roll_no?.trim()
+        const year = parseInt(row.year, 10)
+        const full_name = row.full_name?.trim()
+
         seenEmails.add(email.toLowerCase())
         seenRollNos.add(roll_no.toLowerCase())
         validRows.push({

@@ -62,8 +62,9 @@ export default function SignupPage() {
         <h1 className="text-xl font-bold mb-4">Register Institution</h1>
         {!sent ? (
           <form onSubmit={sendOtp} className="flex flex-col gap-3">
-            <label className="text-sm font-medium">Institution Name</label>
+            <label htmlFor="institutionName" className="text-sm font-medium">Institution Name</label>
             <input
+              id="institutionName"
               type="text"
               required
               value={institutionName}
@@ -71,8 +72,9 @@ export default function SignupPage() {
               className="border rounded px-3 py-2 text-sm"
               placeholder="State University"
             />
-            <label className="text-sm font-medium">Slug (URL-safe)</label>
+            <label htmlFor="slug" className="text-sm font-medium">Slug (URL-safe)</label>
             <input
+              id="slug"
               type="text"
               required
               value={slug}
@@ -80,8 +82,9 @@ export default function SignupPage() {
               className="border rounded px-3 py-2 text-sm font-mono"
               placeholder="state-university"
             />
-            <label className="text-sm font-medium">Admin Email</label>
+            <label htmlFor="adminEmail" className="text-sm font-medium">Admin Email</label>
             <input
+              id="adminEmail"
               type="email"
               required
               value={adminEmail}
@@ -101,8 +104,9 @@ export default function SignupPage() {
         ) : (
           <form onSubmit={verifyAndCreate} className="flex flex-col gap-3">
             <p className="text-sm text-gray-600">OTP sent to <strong>{adminEmail}</strong></p>
-            <label className="text-sm font-medium">OTP code</label>
+            <label htmlFor="otp" className="text-sm font-medium">OTP code</label>
             <input
+              id="otp"
               type="text"
               required
               value={otp}

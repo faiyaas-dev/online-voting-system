@@ -118,7 +118,9 @@ export default function RosterUploadForm({ institutionId }: { institutionId: str
     <div className="flex flex-col gap-4">
       {/* ── Upload form ── */}
       <form onSubmit={upload} className="flex flex-col gap-3">
+        <label htmlFor="csv-file" className="sr-only">CSV File</label>
         <input
+          id="csv-file"
           type="file"
           accept=".csv,text/csv"
           onChange={e => setFile(e.target.files?.[0] ?? null)}

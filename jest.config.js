@@ -4,5 +4,5 @@ module.exports = {
     '<rootDir>/tests/unit/**/*.test.[jt]s?(x)',
     '<rootDir>/tests/integration/**/*.test.[jt]s?(x)',
   ],
-  passWithNoTests: true,
+  preset: 'ts-jest',
 }

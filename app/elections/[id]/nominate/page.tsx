@@ -46,7 +46,7 @@ export default function NominatePage({ params }: { params: { id: string } }) {
       if (existing) setAlreadyNominated(true)
     }
     load()
-  }, [])
+  }, [electionId, router, supabase])
 
   function handlePhotoChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0] ?? null
@@ -126,8 +126,9 @@ export default function NominatePage({ params }: { params: { id: string } }) {
       <h1 className="text-xl font-bold mb-4">Self-Nominate: {election.title}</h1>
       <form onSubmit={submit} className="flex flex-col gap-4">
         <div>
-          <label className="block text-sm font-medium mb-1">Manifesto</label>
+          <label htmlFor="manifesto" className="block text-sm font-medium mb-1">Manifesto</label>
           <textarea
+            id="manifesto"
             value={manifesto}
             onChange={e => setManifesto(e.target.value)}
             rows={5}
@@ -136,10 +137,10 @@ export default function NominatePage({ params }: { params: { id: string } }) {
           />
         </div>
         <div>
-          <label className="block text-sm font-medium mb-1">
+          <label htmlFor="photo" className="block text-sm font-medium mb-1">
             Photo <span className="text-gray-400 font-normal">(optional, JPEG/PNG/WebP, max 2 MB)</span>
           </label>
-          <input type="file" accept="image/jpeg,image/png,image/webp" onChange={handlePhotoChange} />
+          <input id="photo" type="file" accept="image/jpeg,image/png,image/webp" onChange={handlePhotoChange} />
           {photoError && <p className="text-red-600 text-sm mt-1">{photoError}</p>}
         </div>
         {error && <p className="text-red-600 text-sm">{error}</p>}

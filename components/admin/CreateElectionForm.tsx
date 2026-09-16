@@ -45,35 +45,48 @@ export default function CreateElectionForm({ institutionId, adminId, forceDepart
 
   return (
     <form onSubmit={create} className="flex flex-col gap-3">
-      <input
-        type="text"
-        required
-        value={title}
-        onChange={e => setTitle(e.target.value)}
-        placeholder="Election title"
-        className="border rounded px-3 py-2 text-sm"
-      />
-      <div className="flex gap-3 flex-wrap">
+      <div className="flex flex-col">
+        <label htmlFor="electionTitle" className="text-xs text-gray-500 mb-1">Election title</label>
         <input
+          id="electionTitle"
           type="text"
-          value={department}
-          onChange={e => setDepartment(e.target.value)}
-          placeholder="Department (leave blank for institution-wide)"
-          className="border rounded px-3 py-2 text-sm flex-1"
-          disabled={!!forceDepartment}
-        />
-        <input
-          type="number"
-          value={year}
-          onChange={e => setYear(e.target.value)}
-          placeholder="Year (leave blank for all)"
-          className="border rounded px-3 py-2 text-sm w-36"
+          required
+          value={title}
+          onChange={e => setTitle(e.target.value)}
+          placeholder="Election title"
+          className="border rounded px-3 py-2 text-sm"
         />
       </div>
       <div className="flex gap-3 flex-wrap">
         <div className="flex flex-col flex-1">
-          <label className="text-xs text-gray-500 mb-1">Opens at</label>
+          <label htmlFor="department" className="text-xs text-gray-500 mb-1">Department</label>
           <input
+            id="department"
+            type="text"
+            value={department}
+            onChange={e => setDepartment(e.target.value)}
+            placeholder="Department (leave blank for institution-wide)"
+            className="border rounded px-3 py-2 text-sm"
+            disabled={!!forceDepartment}
+          />
+        </div>
+        <div className="flex flex-col">
+          <label htmlFor="year" className="text-xs text-gray-500 mb-1">Year</label>
+          <input
+            id="year"
+            type="number"
+            value={year}
+            onChange={e => setYear(e.target.value)}
+            placeholder="Year (leave blank for all)"
+            className="border rounded px-3 py-2 text-sm w-36"
+          />
+        </div>
+      </div>
+      <div className="flex gap-3 flex-wrap">
+        <div className="flex flex-col flex-1">
+          <label htmlFor="opensAt" className="text-xs text-gray-500 mb-1">Opens at</label>
+          <input
+            id="opensAt"
             type="datetime-local"
             required
             value={opensAt}
@@ -82,8 +95,9 @@ export default function CreateElectionForm({ institutionId, adminId, forceDepart
           />
         </div>
         <div className="flex flex-col flex-1">
-          <label className="text-xs text-gray-500 mb-1">Closes at</label>
+          <label htmlFor="closesAt" className="text-xs text-gray-500 mb-1">Closes at</label>
           <input
+            id="closesAt"
             type="datetime-local"
             required
             value={closesAt}

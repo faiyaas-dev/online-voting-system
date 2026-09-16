@@ -67,8 +67,9 @@ export default function LoginPage() {
         <h1 className="text-xl font-bold mb-4">Sign in</h1>
         {!sent ? (
           <form onSubmit={sendOtp} className="flex flex-col gap-3">
-            <label className="text-sm font-medium">Email address</label>
+            <label htmlFor="email" className="text-sm font-medium">Email address</label>
             <input
+              id="email"
               type="email"
               required
               value={email}
@@ -88,8 +89,9 @@ export default function LoginPage() {
         ) : (
           <form onSubmit={verifyOtp} className="flex flex-col gap-3">
             <p className="text-sm text-gray-600">OTP sent to <strong>{email}</strong></p>
-            <label className="text-sm font-medium">OTP code</label>
+            <label htmlFor="otp" className="text-sm font-medium">OTP code</label>
             <input
+              id="otp"
               type="text"
               required
               value={otp}
@@ -98,10 +100,11 @@ export default function LoginPage() {
               placeholder="6-digit code"
               maxLength={6}
             />
-            <label className="text-sm font-medium">
+            <label htmlFor="institutionId" className="text-sm font-medium">
               Institution ID <span className="text-gray-400">(voter first login only)</span>
             </label>
             <input
+              id="institutionId"
               type="text"
               value={institutionId}
               onChange={e => setInstitutionId(e.target.value)}

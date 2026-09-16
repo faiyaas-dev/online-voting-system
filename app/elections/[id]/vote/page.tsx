@@ -47,7 +47,7 @@ export default function VotePage({ params }: { params: { id: string } }) {
       setLoading(false)
     }
     load()
-  }, [])
+  }, [electionId, supabase])
 
   async function castVote(e: React.FormEvent) {
     e.preventDefault()
