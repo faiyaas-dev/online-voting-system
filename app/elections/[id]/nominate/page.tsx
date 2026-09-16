@@ -9,7 +9,7 @@ const MAX_FILE_SIZE = 2 * 1024 * 1024 // 2 MB
 const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp']
 
 export default function NominatePage({ params }: { params: { id: string } }) {
-  const supabase = createClient()
+  const [supabase] = useState(() => createClient())
   const router = useRouter()
   const electionId = params.id
 

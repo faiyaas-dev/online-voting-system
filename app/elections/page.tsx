@@ -6,12 +6,12 @@ import SignOutButton from '@/components/SignOutButton'
 
 function statusBadge(status: Election['status']) {
   const map: Record<string, string> = {
-    draft: 'bg-gray-200 text-gray-700',
-    nomination_open: 'bg-yellow-100 text-yellow-800',
-    voting_open: 'bg-green-100 text-green-800',
-    closed: 'bg-red-100 text-red-700',
+    draft: 'border-gray-700 text-gray-500',
+    nomination_open: 'border-yellow-500 text-yellow-500',
+    voting_open: 'border-green-500 text-green-500',
+    closed: 'border-red-500 text-red-500',
   }
-  return map[status] || 'bg-gray-100'
+  return map[status] || 'border-gray-700 text-gray-500'
 }
 
 export default async function ElectionsPage() {
@@ -34,55 +34,58 @@ export default async function ElectionsPage() {
     .order('opens_at', { ascending: false })
 
   return (
-    <main className="max-w-3xl mx-auto p-6">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold">Elections</h1>
-        <SignOutButton />
+    <main className="min-h-screen bg-black text-white p-6 md:p-12">
+      <div className="max-w-4xl mx-auto space-y-12">
+        <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6 border-b border-gray-800 pb-6">
+          <h1 className="text-4xl font-extrabold uppercase tracking-widest">Elections</h1>
+          <SignOutButton />
+        </header>
+
+        {(!elections || elections.length === 0) ? (
+          <div className="py-12 text-center text-gray-500 uppercase tracking-widest text-sm font-bold border border-gray-900 border-dashed">
+            No elections currently available.
+          </div>
+        ) : (
+          <ul className="space-y-6">
+            {(elections ?? []).map((e: Election) => (
+              <li key={e.id} className="border border-gray-800 bg-transparent p-6 sm:p-8 hover:border-gray-600 transition-colors">
+                <div className="flex flex-col sm:flex-row justify-between items-start gap-4">
+                  <div className="space-y-2">
+                    <h2 className="font-bold text-2xl uppercase tracking-wider">{e.title}</h2>
+                    <div className="flex flex-col gap-1 text-xs uppercase tracking-widest text-gray-400 font-bold">
+                      <span>{e.scope_department ? `Dept: ${e.scope_department}` : 'Institution-wide'}{e.scope_year ? ` · Year ${e.scope_year}` : ''}</span>
+                      <span>{new Date(e.opens_at).toLocaleDateString()} — {new Date(e.closes_at).toLocaleDateString()}</span>
+                    </div>
+                  </div>
+                  <span className={`text-[10px] px-3 py-1 uppercase font-bold tracking-widest border ${statusBadge(e.status)}`}>
+                    {e.status.replace('_', ' ')}
+                  </span>
+                </div>
+                <div className="mt-8 flex flex-wrap gap-6">
+                  <Link href={`/elections/${e.id}/candidates`} className="text-[11px] font-bold uppercase tracking-widest text-white border-b border-transparent hover:border-white pb-1 transition-colors">
+                    View Candidates
+                  </Link>
+                  {e.status === 'nomination_open' && (
+                    <Link href={`/elections/${e.id}/nominate`} className="text-[11px] font-bold uppercase tracking-widest text-yellow-500 border-b border-transparent hover:border-yellow-500 pb-1 transition-colors">
+                      Self-Nominate
+                    </Link>
+                  )}
+                  {e.status === 'voting_open' && (
+                    <Link href={`/elections/${e.id}/vote`} className="text-[11px] font-bold uppercase tracking-widest text-green-500 border-b border-transparent hover:border-green-500 pb-1 transition-colors">
+                      Vote Now
+                    </Link>
+                  )}
+                  {e.status === 'closed' && (
+                    <Link href={`/elections/${e.id}/results`} className="text-[11px] font-bold uppercase tracking-widest text-gray-400 border-b border-transparent hover:text-white hover:border-white pb-1 transition-colors">
+                      Results
+                    </Link>
+                  )}
+                </div>
+              </li>
+            ))}
+          </ul>
+        )}
       </div>
-      {(!elections || elections.length === 0) && (
-        <p className="text-gray-500">No elections available for your account.</p>
-      )}
-      <ul className="flex flex-col gap-4">
-        {(elections ?? []).map((e: Election) => (
-          <li key={e.id} className="border rounded p-4 bg-white">
-            <div className="flex justify-between items-start">
-              <div>
-                <h2 className="font-semibold text-lg">{e.title}</h2>
-                <p className="text-sm text-gray-500">
-                  {e.scope_department ? `Dept: ${e.scope_department}` : 'Institution-wide'}
-                  {e.scope_year ? ` · Year ${e.scope_year}` : ''}
-                </p>
-                <p className="text-sm text-gray-500">
-                  Opens: {new Date(e.opens_at).toLocaleDateString()} · Closes: {new Date(e.closes_at).toLocaleDateString()}
-                </p>
-              </div>
-              <span className={`text-xs px-2 py-1 rounded-full font-medium ${statusBadge(e.status)}`}>
-                {e.status.replace('_', ' ')}
-              </span>
-            </div>
-            <div className="mt-3 flex gap-2 flex-wrap">
-              <Link href={`/elections/${e.id}/candidates`} className="text-sm text-blue-600 underline">
-                View candidates
-              </Link>
-              {e.status === 'nomination_open' && (
-                <Link href={`/elections/${e.id}/nominate`} className="text-sm text-yellow-700 underline">
-                  Self-nominate
-                </Link>
-              )}
-              {e.status === 'voting_open' && (
-                <Link href={`/elections/${e.id}/vote`} className="text-sm text-green-700 underline">
-                  Vote
-                </Link>
-              )}
-              {e.status === 'closed' && (
-                <Link href={`/elections/${e.id}/results`} className="text-sm text-gray-600 underline">
-                  Results
-                </Link>
-              )}
-            </div>
-          </li>
-        ))}
-      </ul>
     </main>
   )
 }

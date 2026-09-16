@@ -6,15 +6,15 @@ test.describe('Voter Journey', () => {
     await page.goto('/login');
     await expect(page.getByRole('heading', { name: 'Sign in' })).toBeVisible();
     
-    await page.getByLabel('Email').fill('voterA@test.com');
+    await page.getByLabel('Email address').fill('voterA@test.com');
     await page.getByRole('button', { name: 'Send OTP' }).click();
     
     // In a real E2E test without email access, we'd use a bypass token or mock the auth response.
     // Since Docker is unavailable here, we cannot hit the local Inbucket instance to fetch the OTP,
     // and magic link bypass requires changing production code or having an active DB to generate links.
     // For walkthrough purposes, assuming magic link clicked or OTP entered manually:
-    await page.getByLabel('OTP Code', { exact: false }).fill('123456');
-    await page.getByRole('button', { name: 'Verify' }).click();
+    await page.getByLabel('OTP code').fill('123456');
+    await page.getByRole('button', { name: 'Verify & Sign in' }).click();
 
     // 2. View eligible elections
     // Assuming redirected to /elections

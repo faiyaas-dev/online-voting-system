@@ -38,33 +38,47 @@ export default async function DeptAdminPage() {
     : { data: [] }
 
   return (
-    <main className="max-w-4xl mx-auto p-6">
-      <div className="flex justify-between items-center mb-6">
-        <div>
-          <h1 className="text-2xl font-bold">Department Admin</h1>
-          <p className="text-sm text-gray-500">Department: {profile.department}</p>
+    <main className="min-h-screen bg-black text-white p-6 md:p-12">
+      <div className="max-w-6xl mx-auto space-y-12">
+        <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6 border-b border-gray-800 pb-6">
+          <div>
+            <h1 className="text-4xl font-extrabold uppercase tracking-widest">Department Admin</h1>
+            <p className="text-sm font-bold tracking-widest text-gray-500 uppercase mt-2">Department: {profile.department}</p>
+          </div>
+          <SignOutButton />
+        </header>
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          <div className="space-y-8">
+            <section className="border border-gray-800 p-6 md:p-8 space-y-6 bg-transparent">
+              <h2 className="text-xl font-bold uppercase tracking-widest text-gray-300">Create Election (dept-scoped)</h2>
+              <div className="invert grayscale contrast-125">
+                <CreateElectionForm
+                  institutionId={profile.institution_id!}
+                  adminId={profile.id}
+                  forceDepartment={profile.department}
+                />
+              </div>
+            </section>
+          </div>
+          
+          <div className="space-y-8">
+            <section className="border border-gray-800 p-6 md:p-8 space-y-6 bg-transparent">
+              <h2 className="text-xl font-bold uppercase tracking-widest text-gray-300">Elections</h2>
+              <div className="invert grayscale contrast-125 overflow-hidden">
+                <ElectionTable elections={(elections as Election[]) ?? []} />
+              </div>
+            </section>
+
+            <section className="border border-gray-800 p-6 md:p-8 space-y-6 bg-transparent">
+              <h2 className="text-xl font-bold uppercase tracking-widest text-gray-300">Pending Candidates ({(pendingCandidates ?? []).length})</h2>
+              <div className="invert grayscale contrast-125 overflow-hidden">
+                <CandidateApprovalTable candidates={(pendingCandidates ?? []) as any} />
+              </div>
+            </section>
+          </div>
         </div>
-        <SignOutButton />
       </div>
-
-      <section className="mb-8 border rounded p-4 bg-white">
-        <h2 className="text-lg font-semibold mb-3">Create Election (dept-scoped)</h2>
-        <CreateElectionForm
-          institutionId={profile.institution_id!}
-          adminId={profile.id}
-          forceDepartment={profile.department}
-        />
-      </section>
-
-      <section className="mb-8 border rounded p-4 bg-white">
-        <h2 className="text-lg font-semibold mb-3">Elections</h2>
-        <ElectionTable elections={(elections as Election[]) ?? []} />
-      </section>
-
-      <section className="border rounded p-4 bg-white">
-        <h2 className="text-lg font-semibold mb-3">Pending Candidates ({(pendingCandidates ?? []).length})</h2>
-        <CandidateApprovalTable candidates={(pendingCandidates ?? []) as any} />
-      </section>
     </main>
   )
 }

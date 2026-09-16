@@ -6,7 +6,7 @@ import Link from 'next/link'
 import type { Candidate } from '@/lib/supabase/types'
 
 export default function VotePage({ params }: { params: { id: string } }) {
-  const supabase = createClient()
+  const [supabase] = useState(() => createClient())
   const electionId = params.id
 
   const [candidates, setCandidates] = useState<(Candidate & { profiles: any })[]>([])

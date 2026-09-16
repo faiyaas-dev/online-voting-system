@@ -20,53 +20,57 @@ export default async function PlatformAdminPage() {
   const { data: metrics, error } = await supabase.rpc('get_platform_metrics')
 
   return (
-    <main className="max-w-5xl mx-auto p-6">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold">Platform Admin — Cross-Institution View</h1>
-        <SignOutButton />
-      </div>
-      <p className="text-sm text-gray-500 mb-4">
-        Aggregate metrics only — no per-vote or per-voter data shown here.
-      </p>
+    <main className="min-h-screen bg-black text-white p-6 md:p-12">
+      <div className="max-w-7xl mx-auto space-y-12">
+        <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6 border-b border-gray-800 pb-6">
+          <div>
+            <h1 className="text-4xl font-extrabold uppercase tracking-widest">Platform Admin</h1>
+            <p className="text-xs font-bold tracking-widest text-gray-500 uppercase mt-2">Aggregate Metrics · Cross-Institution View</p>
+          </div>
+          <SignOutButton />
+        </header>
 
-      {error && <p className="text-red-600">{error.message}</p>}
+        {error && <p className="text-red-500 font-bold uppercase tracking-widest">{error.message}</p>}
 
-      {!error && (!metrics || metrics.length === 0) && (
-        <p className="text-gray-500">No institutions registered yet.</p>
-      )}
+        {!error && (!metrics || metrics.length === 0) && (
+          <div className="py-12 text-center text-gray-500 uppercase tracking-widest text-sm font-bold border border-gray-900 border-dashed">
+            No institutions registered yet.
+          </div>
+        )}
 
-      {!error && metrics && metrics.length > 0 && (
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm border-collapse">
-            <thead>
-              <tr className="border-b bg-gray-50 text-left">
-                <th className="py-2 px-3">Institution</th>
-                <th className="py-2 px-3 text-right">Total elections</th>
-                <th className="py-2 px-3 text-right">Active</th>
-                <th className="py-2 px-3 text-right">Closed</th>
-                <th className="py-2 px-3 text-right">Roster size</th>
-                <th className="py-2 px-3 text-right">Votes cast</th>
-                <th className="py-2 px-3 text-right">Participation %</th>
-              </tr>
-            </thead>
-            <tbody>
-              {(metrics as PlatformMetric[]).map(m => (
-                <tr key={m.institution_id} className="border-b hover:bg-gray-50">
-                  <td className="py-2 px-3 font-medium">{m.institution_name}</td>
-                  <td className="py-2 px-3 text-right">{m.total_elections}</td>
-                  <td className="py-2 px-3 text-right">{m.active_elections}</td>
-                  <td className="py-2 px-3 text-right">{m.closed_elections}</td>
-                  <td className="py-2 px-3 text-right">{m.total_voters}</td>
-                  <td className="py-2 px-3 text-right">{m.total_votes_cast}</td>
-                  <td className="py-2 px-3 text-right">
-                    {m.participation_pct != null ? `${m.participation_pct}%` : '—'}
-                  </td>
+        {!error && metrics && metrics.length > 0 && (
+          <div className="overflow-x-auto border border-gray-800 p-1">
+            <table className="w-full text-sm font-mono text-left whitespace-nowrap">
+              <thead className="bg-gray-900 text-gray-400 uppercase tracking-widest text-xs">
+                <tr>
+                  <th className="py-4 px-4 font-normal">Institution</th>
+                  <th className="py-4 px-4 font-normal text-right">Elections</th>
+                  <th className="py-4 px-4 font-normal text-right">Active</th>
+                  <th className="py-4 px-4 font-normal text-right">Closed</th>
+                  <th className="py-4 px-4 font-normal text-right">Roster</th>
+                  <th className="py-4 px-4 font-normal text-right">Votes</th>
+                  <th className="py-4 px-4 font-normal text-right">Participation</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
+              </thead>
+              <tbody className="text-gray-300">
+                {(metrics as PlatformMetric[]).map(m => (
+                  <tr key={m.institution_id} className="border-b border-gray-800 hover:bg-gray-900 transition-colors">
+                    <td className="py-4 px-4 font-bold text-white">{m.institution_name}</td>
+                    <td className="py-4 px-4 text-right">{m.total_elections}</td>
+                    <td className="py-4 px-4 text-right">{m.active_elections}</td>
+                    <td className="py-4 px-4 text-right">{m.closed_elections}</td>
+                    <td className="py-4 px-4 text-right text-gray-400">{m.total_voters}</td>
+                    <td className="py-4 px-4 text-right text-gray-400">{m.total_votes_cast}</td>
+                    <td className="py-4 px-4 text-right text-green-500 font-bold">
+                      {m.participation_pct != null ? `${m.participation_pct}%` : '—'}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
     </main>
   )
 }

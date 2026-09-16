@@ -35,66 +35,84 @@ export default async function InstitutionAdminPage() {
   const importErrors = errorsRes.data ?? []
 
   return (
-    <main className="max-w-4xl mx-auto p-6">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold">Institution Admin Dashboard</h1>
-        <SignOutButton />
-      </div>
+    <main className="min-h-screen bg-black text-white p-6 md:p-12">
+      <div className="max-w-6xl mx-auto space-y-12">
+        <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6 border-b border-gray-800 pb-6">
+          <h1 className="text-4xl font-extrabold uppercase tracking-widest">Institution Admin</h1>
+          <SignOutButton />
+        </header>
 
-      {/* ── Roster Upload ── */}
-      <section className="mb-8 border rounded p-4 bg-white">
-        <h2 className="text-lg font-semibold mb-3">Roster Upload (CSV)</h2>
-        <RosterUploadForm institutionId={profile.institution_id!} />
-        {importErrors.length > 0 && (
-          <div className="mt-4">
-            <h3 className="text-sm font-medium text-red-700 mb-2">Import Errors ({importErrors.length} rows)</h3>
-            <div className="overflow-x-auto">
-              <table className="text-xs w-full border-collapse">
-                <thead>
-                  <tr className="border-b text-left bg-red-50">
-                    <th className="py-1 px-2">Row</th>
-                    <th className="py-1 px-2">Reason</th>
-                    <th className="py-1 px-2">Raw data</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {importErrors.map(e => (
-                    <tr key={e.id} className="border-b">
-                      <td className="py-1 px-2">{e.row_number}</td>
-                      <td className="py-1 px-2 text-red-700">{e.error_reason}</td>
-                      <td className="py-1 px-2 font-mono">{JSON.stringify(e.raw_row)}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          <div className="space-y-8">
+            {/* ── Roster Upload ── */}
+            <section className="border border-gray-800 p-6 md:p-8 space-y-6 bg-transparent">
+              <h2 className="text-xl font-bold uppercase tracking-widest text-gray-300">Roster Upload</h2>
+              <div className="invert grayscale contrast-125">
+                <RosterUploadForm institutionId={profile.institution_id!} />
+              </div>
+              {importErrors.length > 0 && (
+                <div className="mt-8 border-t border-gray-800 pt-6">
+                  <h3 className="text-xs font-bold uppercase tracking-widest text-red-500 mb-4">Import Errors ({importErrors.length} rows)</h3>
+                  <div className="overflow-x-auto">
+                    <table className="text-xs w-full text-left font-mono">
+                      <thead className="text-gray-500 border-b border-gray-800">
+                        <tr>
+                          <th className="py-2 px-2 font-normal">Row</th>
+                          <th className="py-2 px-2 font-normal">Reason</th>
+                          <th className="py-2 px-2 font-normal">Data</th>
+                        </tr>
+                      </thead>
+                      <tbody className="text-gray-300">
+                        {importErrors.map(e => (
+                          <tr key={e.id} className="border-b border-gray-800 hover:bg-gray-900 transition-colors">
+                            <td className="py-2 px-2">{e.row_number}</td>
+                            <td className="py-2 px-2 text-red-400">{e.error_reason}</td>
+                            <td className="py-2 px-2 truncate max-w-[200px]">{JSON.stringify(e.raw_row)}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
+            </section>
+
+            {/* ── Invite Department Admin ── */}
+            <section className="border border-gray-800 p-6 md:p-8 space-y-6 bg-transparent">
+              <h2 className="text-xl font-bold uppercase tracking-widest text-gray-300">Invite Admin</h2>
+              <div className="invert grayscale contrast-125">
+                <InviteDeptAdminForm institutionId={profile.institution_id!} />
+              </div>
+            </section>
           </div>
-        )}
-      </section>
 
-      {/* ── Invite Department Admin ── */}
-      <section className="mb-8 border rounded p-4 bg-white">
-        <h2 className="text-lg font-semibold mb-3">Invite Department Admin</h2>
-        <InviteDeptAdminForm institutionId={profile.institution_id!} />
-      </section>
+          <div className="space-y-8">
+            {/* ── Create Election ── */}
+            <section className="border border-gray-800 p-6 md:p-8 space-y-6 bg-transparent">
+              <h2 className="text-xl font-bold uppercase tracking-widest text-gray-300">Create Election</h2>
+              <div className="invert grayscale contrast-125">
+                <CreateElectionForm institutionId={profile.institution_id!} adminId={profile.id} />
+              </div>
+            </section>
 
-      {/* ── Create Election ── */}
-      <section className="mb-8 border rounded p-4 bg-white">
-        <h2 className="text-lg font-semibold mb-3">Create Election</h2>
-        <CreateElectionForm institutionId={profile.institution_id!} adminId={profile.id} />
-      </section>
-
-      {/* ── Manage Elections ── */}
-      <section className="mb-8 border rounded p-4 bg-white">
-        <h2 className="text-lg font-semibold mb-3">Elections ({elections.length})</h2>
-        <ElectionTable elections={elections} />
-      </section>
-
-      {/* ── Pending Candidates ── */}
-      <section className="border rounded p-4 bg-white">
-        <h2 className="text-lg font-semibold mb-3">Pending Candidates ({pendingCandidates.length})</h2>
-        <CandidateApprovalTable candidates={pendingCandidates} />
-      </section>
+            {/* ── Manage Elections ── */}
+            <section className="border border-gray-800 p-6 md:p-8 space-y-6 bg-transparent">
+              <h2 className="text-xl font-bold uppercase tracking-widest text-gray-300">Elections ({elections.length})</h2>
+              <div className="invert grayscale contrast-125 overflow-hidden">
+                <ElectionTable elections={elections} />
+              </div>
+            </section>
+            
+            {/* ── Pending Candidates ── */}
+            <section className="border border-gray-800 p-6 md:p-8 space-y-6 bg-transparent">
+              <h2 className="text-xl font-bold uppercase tracking-widest text-gray-300">Pending Candidates ({pendingCandidates.length})</h2>
+              <div className="invert grayscale contrast-125 overflow-hidden">
+                <CandidateApprovalTable candidates={pendingCandidates} />
+              </div>
+            </section>
+          </div>
+        </div>
+      </div>
     </main>
   )
 }
