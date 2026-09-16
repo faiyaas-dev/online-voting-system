@@ -4,7 +4,3 @@ node_modules
 .env
 supabase/.temp
 
-# Documentation / Playbooks
-RUNBOOK.md
-SDLC_IDE_PLAYBOOK.md
-CONTINGENCY_MATRIX.md

@@ -1,68 +1,127 @@
 # AGENTS.md
 
-A README for agents. Every AI tool working on this repo — Antigravity, Trae, chat.z.ai (manual), Claude Code, Cursor, whatever comes next — reads this file first, every session. This file is self-contained: you should not need to open `ARCHITECTURE.md` to get to work, though it remains in the repo as the original human-approved decision record if you want the discussion context behind a rule.
+A README for agents. Every AI tool working on this repo — Antigravity, Trae, chat.z.ai (manual), Claude Code, Cursor, DeepSeek, whatever comes next — reads this file first, every session. This file is 100% self-contained: all locked schemas, RLS policies, core logic workflows, the complete 9-phase SDLC playbook, quota and contingency fallback matrices, and technical error resolutions are consolidated directly within this document.
 
 If any instruction here conflicts with what you're about to do, stop and surface the conflict instead of resolving it silently.
 
-## Project overview
+---
 
-A multi-tenant SaaS platform for running college elections. Multiple institutions self-serve sign up; each institution uploads a voter roster by CSV; elections are scoped by department/year or institution-wide; candidates self-nominate and are admin-approved before appearing on the ballot; voters authenticate by OTP/magic-link (no passwords) and vote once per election, enforced at the database level, not just in app code.
+## 1. Project Overview
+
+A multi-tenant SaaS platform for running college elections. Multiple institutions self-serve sign up; each institution uploads a voter roster by CSV; elections are scoped by department/year or institution-wide; candidates self-nominate and are admin-approved before appearing on the ballot; voters authenticate by OTP/magic-link (no passwords) and vote once per election, enforced at the database level, not just in application code.
 
 Three admin tiers: Platform Admin (cross-institution, aggregate-only view) → Institution Admin (full control of one institution) → Department Admin (own department only). Voters see only elections matching their own department/year scope, or institution-wide elections.
 
-## Tech stack
+### Administrative & User Role Hierarchy
 
-- **Database / Auth / Storage:** Supabase (Postgres + Row Level Security + `auth.users` + Storage bucket for candidate photos)
-- **Frontend:** Next.js (App Router, TypeScript) + Tailwind — kept intentionally minimal/functional for this build, not a polished design pass
-- **Spec engine:** OpenSpec CLI (`openspec/changes/`, `openspec/specs/`) — every schema or policy change ships as a change folder (proposal → design → tasks → archive), not a bare migration
-- **IDEs used on this project:** Google Antigravity (primary, now Generally Available at $0/individual as of Sept 2026 — no longer preview-gated), Trae (frontend scaffolding, free tier), plus a fallback ladder covering Gemini Code Assist, DeepSeek, and the Gemini app for when both primaries are quota-exhausted — see "IDE routing & fallback" below and `CONTINGENCY_MATRIX.md` for full detail.
+```
+institutions
+  └─ profiles (auth.users + role + institution_id + department)
+       ├─ platform_admin: cross-tenant aggregate oversight (no PII/ballot access)
+       ├─ institution_admin: full control of one institution
+       ├─ department_admin: scoped strictly to assigned department
+       └─ voter: enrolled students claiming roster records
+  └─ roster (authoritative student eligibility list)
+  └─ elections (institution-wide or department/year scoped)
+       ├─ candidates (self-nominated, pending → approved/rejected)
+       └─ votes (one per voter per election, DB-enforced)
+```
 
-## Dev environment setup
+### Role Permission Matrix
+
+| Action | Platform Admin | Institution Admin | Department Admin | Voter |
+|---|:---:|:---:|:---:|:---:|
+| **Create Institution** | — *(self-serve)* | — | — | — |
+| **Upload Roster CSV** | ❌ | ✅ *(own institution)* | ❌ | ❌ |
+| **Invite Dept Admin** | ❌ | ✅ | ❌ | ❌ |
+| **Create Election (Institution-Wide)** | ❌ | ✅ | ❌ | ❌ |
+| **Create Election (Own Dept Only)** | ❌ | ✅ | ✅ | ❌ |
+| **Approve / Reject Candidates** | ❌ | ✅ *(all dept elections)* | ✅ *(own dept elections only)* | ❌ |
+| **Self-Nominate for Ballot** | ❌ | ❌ | ❌ | ✅ *(if eligible & open)* |
+| **Cast Ballot** | ❌ | ❌ | ❌ | ✅ *(if eligible & open)* |
+| **View Election Results** | ✅ *(audit RPC)* | ✅ *(audit RPC)* | ❌ *(locked till close)* | ❌ *(locked till close)* |
+| **Cross-Tenant Aggregate Metrics** | ✅ *(RPC only)* | ❌ | ❌ | ❌ |
+
+---
+
+## 2. Tech Stack
+
+- **Database / Auth / Storage:** Supabase (PostgreSQL 15+ + Row Level Security + `auth.users` + Storage bucket for candidate photos).
+- **Frontend:** Next.js 14 (App Router, TypeScript, Server & Client Components) + Tailwind CSS — kept functional and robust.
+- **Spec Engine:** OpenSpec CLI (`openspec/changes/`, `openspec/specs/`) — every schema or policy change ships as a change folder (`proposal.md` → `design.md` → `tasks.md` → archive), not a bare migration.
+- **Testing:** Jest, ts-jest, Playwright (E2E browser tests).
+- **Hosting & CI/CD:** Netlify (Frontend) + GitHub Actions (automated test runner and Supabase migration deploy).
+- **IDEs & Tooling:** Google Antigravity (primary for reasoning, DB/RLS, testing, security, devops), Trae (frontend scaffolding and UI iteration), plus a 5-tier fallback ladder (Gemini Code Assist, DeepSeek, Gemini app).
+
+---
+
+## 3. Dev Environment Setup
 
 ```bash
 node -v                     # need 20.19+ for OpenSpec
 npm install -g supabase     # Supabase CLI
-# install OpenSpec CLI per its current README — command changes across releases
+npm install -g @fission-ai/openspec # OpenSpec CLI
 openspec init
 supabase login
 supabase link --project-ref <your-dev-project-ref>
 ```
 
 Copy `.env.local.example` to `.env.local` and fill in:
+```env
+NEXT_PUBLIC_SUPABASE_URL=https://your-project-ref.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key-here
 ```
-NEXT_PUBLIC_SUPABASE_URL=
-NEXT_PUBLIC_SUPABASE_ANON_KEY=
-```
-The `service_role` key is never placed in `.env.local` or any client-reachable file — it exists only inside Supabase Edge Function secrets.
 
-**Never point local dev at a Supabase project holding real student data.** Use a throwaway/dev project until the Phase 6 security review (see playbook) has passed.
+> [!CAUTION]
+> **Service Role Key Hygiene**: The `service_role` key must **never** be placed in `.env.local` or any client-reachable file. It exists exclusively inside Supabase Edge Function secrets and protected CI/CD environments.
+>
+> **Data Protection Rule**: Never point local development at a Supabase project holding real student data. Use a throwaway/dev project.
 
-## Build & run commands
+---
+
+## 4. Build & Run Commands
 
 ```bash
-npm run dev              # local dev server
-npm run build             # production build
-npm run lint               # lint
-supabase db push           # apply migrations to linked project
-supabase functions deploy roster-csv-validate   # deploy an Edge Function
+# Development server
+npm run dev              # or: npm.cmd run dev (on Windows PowerShell)
+
+# Production build validation
+npm run build            # or: npm.cmd run build
+
+# Code linting
+npm run lint             # or: npm.cmd run lint
+
+# Database migrations
+supabase db push         # apply migrations to linked remote project
+supabase db reset        # reset and re-apply local migrations (Docker stack)
+
+# Deploy edge functions
+supabase functions deploy roster-csv-validate
 ```
 
-## Testing instructions
+> [!NOTE]
+> **Windows PowerShell Execution Policy**: If PowerShell blocks script execution (`npm.ps1`), invoke npm commands using `npm.cmd` (e.g., `npm.cmd run test`, `npm.cmd run build`).
+
+---
+
+## 5. Testing Instructions & Quality Gates
 
 ```bash
-npm run test               # unit tests
+npm run test             # or: npm.cmd run test
+npx playwright test      # browser E2E test suite
 ```
 
-A task touching `votes`, `elections`, or any RLS policy is **not done** until these three unit tests pass:
-1. Double-vote is rejected (`UNIQUE(voter_id, election_id)` fires).
-2. A vote insert is rejected when `elections.status != 'voting_open'`.
-3. `get_election_results()`'s tally matches a hand-computed expected count on a seeded test election.
+A task touching `votes`, `elections`, or any RLS policy is **not done** until these requirements pass:
+1. **Double-vote rejection**: Second vote for the same `(voter_id, election_id)` is rejected by `UNIQUE(voter_id, election_id)`.
+2. **Closed-election rejection**: Vote insert is rejected by RLS when `elections.status != 'voting_open'`.
+3. **Tally math accuracy**: `get_election_results()` tally matches a hand-computed expected count on a seeded test election.
+4. **Cross-tenant leak prevention**: Confirm an authenticated user from Institution A cannot read, insert, or modify Institution B's roster, elections, candidates, or votes.
 
-Any change touching an RLS policy must also include a cross-tenant leak test: confirm a user from Institution A cannot read Institution B's roster, elections, candidates, or results through that policy.
+---
 
-## Database schema
+## 6. Database Schema (Locked)
 
-Locked — reproduce exactly, do not "improve" without an OpenSpec change first.
+Locked — reproduce exactly, do not alter without an OpenSpec change proposal first.
 
 ```sql
 -- institutions: tenant root
@@ -119,7 +178,7 @@ create table candidates (
   election_id uuid references elections(id) not null,
   user_id uuid references profiles(id) not null,
   manifesto text,
-  photo_path text, -- Supabase Storage path, Could-tier
+  photo_path text,             -- Supabase Storage path
   status text not null default 'pending'
     check (status in ('pending','approved','rejected')),
   approved_by uuid references profiles(id),
@@ -137,7 +196,7 @@ create table votes (
   unique(voter_id, election_id)
 );
 
--- roster_import_errors: Could-tier — row-level CSV validation failures
+-- roster_import_errors: row-level CSV validation failures
 create table roster_import_errors (
   id uuid primary key default gen_random_uuid(),
   institution_id uuid references institutions(id) not null,
@@ -148,7 +207,9 @@ create table roster_import_errors (
 );
 ```
 
-## Row Level Security policies
+---
+
+## 7. Row Level Security Policies & Helper Functions (Locked)
 
 Non-negotiable on every table above — no table ships without its policy in the same change.
 
@@ -162,12 +223,19 @@ create or replace function my_role() returns text as $$
   select role from profiles where id = auth.uid();
 $$ language sql security definer stable;
 
+alter table institutions enable row level security;
 alter table profiles enable row level security;
 alter table roster enable row level security;
 alter table elections enable row level security;
 alter table candidates enable row level security;
 alter table votes enable row level security;
 alter table roster_import_errors enable row level security;
+
+-- institutions: read own institution, or all institutions for platform_admin
+create policy institutions_select on institutions
+  for select using (
+    id = my_institution_id() or my_role() = 'platform_admin'
+  );
 
 -- profiles: read own or same-institution profiles
 create policy profiles_select on profiles
@@ -191,7 +259,7 @@ create policy roster_admin_access on roster
     and my_role() in ('institution_admin')
   );
 
--- roster_import_errors: same access pattern as roster (Could-tier)
+-- roster_import_errors: same access pattern as roster
 create policy roster_import_errors_admin_access on roster_import_errors
   for all using (
     institution_id = my_institution_id()
@@ -266,11 +334,14 @@ create policy candidates_admin_update on candidates
       select 1 from elections e
       where e.id = election_id
         and e.institution_id = my_institution_id()
+        and (
+          my_role() = 'institution_admin'
+          or (my_role() = 'department_admin' and e.scope_department = (select department from profiles where id = auth.uid()))
+        )
     )
   );
 
--- votes: insert only if voter belongs to institution, election is
--- voting_open, and eligibility matches
+-- votes: insert only if voter belongs to institution, election is voting_open, and eligibility matches
 create policy votes_insert on votes
   for insert with check (
     voter_id = auth.uid()
@@ -284,19 +355,59 @@ create policy votes_insert on votes
     )
   );
 
--- votes: voters can't read others' ballots; results come from a separate
--- RPC function, never raw votes table
+-- votes: voters can't read others' ballots; results come from a separate RPC function, never raw votes table
 create policy votes_own_read on votes
   for select using (voter_id = auth.uid());
 
--- claim_voter_profile: securely matches roster on first login, avoids
--- exposing the roster table directly to the client
+-- create_institution_and_admin: server-side atomic institution and admin creation
+create or replace function create_institution_and_admin(p_institution_name text, p_slug text)
+returns jsonb as $$
+declare
+  v_institution_id uuid;
+  v_user_email text;
+begin
+  v_user_email := auth.jwt()->>'email';
+  if auth.uid() is null or v_user_email is null then
+    raise exception 'Authentication required';
+  end if;
+
+  if exists (select 1 from profiles where id = auth.uid() and institution_id is not null) then
+    raise exception 'User already assigned to an institution';
+  end if;
+
+  insert into institutions (name, slug)
+  values (p_institution_name, p_slug)
+  returning id into v_institution_id;
+
+  insert into profiles (id, institution_id, role, full_name)
+  values (auth.uid(), v_institution_id, 'institution_admin', coalesce(auth.jwt()->>'name', 'Admin'))
+  on conflict (id) do update set
+    institution_id = excluded.institution_id,
+    role = 'institution_admin';
+
+  return jsonb_build_object(
+    'institution_id', v_institution_id,
+    'role', 'institution_admin'
+  );
+end;
+$$ language plpgsql security definer;
+
+-- claim_voter_profile: securely matches roster on first login, prevents re-claims and tenant-hopping
 create or replace function claim_voter_profile(p_institution_id uuid)
 returns profiles as $$
 declare
   r roster%rowtype;
   p profiles%rowtype;
 begin
+  -- Check if profile already claimed for an institution
+  select * into p from profiles where id = auth.uid();
+  if found and p.institution_id is not null then
+    if p.institution_id != p_institution_id then
+      raise exception 'Profile already associated with a different institution';
+    end if;
+    return p;
+  end if;
+
   select * into r from roster
   where institution_id = p_institution_id and lower(email) = lower(auth.jwt()->>'email');
   if not found then
@@ -338,108 +449,409 @@ begin
   group by v.candidate_id;
 end;
 $$ language plpgsql security definer;
+
+-- get_platform_metrics: cross-institution aggregate metrics for platform_admin
+create or replace function get_platform_metrics()
+returns jsonb as $$
+declare
+  v_metrics jsonb;
+begin
+  if my_role() != 'platform_admin' then
+    raise exception 'Access denied: platform_admin role required';
+  end if;
+
+  select jsonb_build_object(
+    'total_institutions', (select count(*) from institutions),
+    'total_elections', (select count(*) from elections),
+    'total_votes', (select count(*) from votes),
+    'active_elections', (select count(*) from elections where status = 'voting_open')
+  ) into v_metrics;
+
+  return v_metrics;
+end;
+$$ language plpgsql security definer;
 ```
 
-**Could-tier extension — Platform Admin cross-institution view:** implement as a second RPC following the exact same pattern as `get_election_results`: aggregates only (e.g. total elections, total votes cast, participation rate per institution), gated to `role = 'platform_admin'`, never a raw grant on any table. Design this RPC in the Phase 2 OpenSpec change before writing it — see `SDLC_IDE_PLAYBOOK.md`.
+### Candidate Photos Storage Policy
+- **Bucket**: `candidate-photos` in Supabase Storage.
+- **Upload Rule**: Candidates upload their own photo during nomination (`folder = {institution_id}/{election_id}/{user_id}.ext`).
+- **Read Rule**: Photos of candidates whose status is `approved` are publicly readable; pending/rejected photos are restricted to admins and the candidate.
+- **Validation**: File size (<= 2MB) and MIME type (image/jpeg, image/png, image/webp) are validated server-side.
 
-**Could-tier extension — candidate photos:** Supabase Storage bucket policy — candidates upload their own photo during nomination; approved candidates' photos are publicly readable; pending/rejected photos are not; file size/type limits are enforced server-side (storage policy + Edge Function check), never client-only.
+---
 
-## Core logic flows
+## 8. Core Logic Flows & Workflows
 
-**Voter first login (OTP):**
+### Voter First Login (OTP)
 1. Voter enters email → `supabase.auth.signInWithOtp`.
 2. On magic-link callback, app calls `supabase.rpc('claim_voter_profile', { p_institution_id })`.
-3. `claim_voter_profile` checks `roster` for `(institution_id, email)` and creates/updates the `profiles` row. No roster match → exception, surfaced to the voter as "your email isn't on this institution's roster."
+3. `claim_voter_profile` matches `roster` on `(institution_id, email)`. If matched, assigns `voter` role, `department`, `year`, `roll_no`. If missing, raises exception surfaced as "Your email is not on this institution's roster."
 
-**Institution self-serve signup:**
-1. Person enters institution name + their own email → OTP.
-2. On success: create `institutions` row + `profiles` row with `role='institution_admin'`.
+### Institution Self-Serve Signup
+1. User enters institution name and email → authenticates via OTP.
+2. App calls `supabase.rpc('create_institution_and_admin', { p_institution_name, p_slug })`.
+3. Atomically creates `institutions` row and assigns the user `role = 'institution_admin'` server-side.
 
-**Election eligibility (checked client-side for UX, enforced server-side for real):**
-`voter.department == election.scope_department OR election.scope_department IS NULL` AND `voter.year == election.scope_year OR election.scope_year IS NULL`. The client check only hides ineligible elections from the UI — RLS is the actual gate.
+### Election Eligibility Evaluation
+- **Formula**: `(election.scope_department IS NULL OR voter.department = election.scope_department) AND (election.scope_year IS NULL OR voter.year = election.scope_year)`.
+- Client evaluates this to filter visible ballots for UX; PostgreSQL RLS policies enforce it upon insert.
 
-**Vote casting:**
-1. App checks `election.status == 'voting_open'` and voter eligibility (UX only).
-2. Insert into `votes`. `UNIQUE(voter_id, election_id)` is the real backstop against double-vote.
-3. `votes_insert` RLS policy re-checks `status = 'voting_open'` at insert time — a closed election rejects the insert at the database level, not just via UI hiding.
+### Vote Casting
+1. Client checks `elections.status == 'voting_open'` and eligibility.
+2. Insert ballot into `votes` table.
+3. Database `UNIQUE(voter_id, election_id)` constraint blocks double-votes; RLS policy verifies status is `voting_open` at the moment of insert.
 
-**Results visibility:**
-Hidden from voters until `elections.status = 'closed'`. Both voters and admins call `get_election_results(p_election_id)` — never a raw `votes` query.
+### Results Visibility
+- Hidden from voters until `elections.status = 'closed'`.
+- Tallies retrieved via `get_election_results(p_election_id)`. Raw vote rows are never queried.
 
-## MoSCoW scope for this build
+---
 
-Full scope for this pass: **Must + Should + Could**. This is genuinely a multi-day build by default — if you're compressing it into one day, **decide your cut line before Phase 1, not when a session runs long.** Must + Should is the realistic one-day target; treat Could as a stretch to attempt only if Phase 4 finishes with real time left, not something to discover you're out of time for mid-build.
+## 9. SDLC × IDE Multi-Phase Playbook
 
-| Tier | Items |
-|---|---|
-| **Must** | institutions + profiles + roster tables + RLS · OTP auth (voter + institution-admin) · multi-level elections (dept/year scope) · self-nomination + institution-admin approval · vote cast with UNIQUE + `voting_open` DB lock · results hidden-till-close |
-| **Should** | Department Admin tier (3rd role, dept-scoped election creation) · unit tests (double-vote reject, closed-election reject, tally match) |
-| **Could** | Platform Admin dashboard (cross-institution, aggregate RPC only) · CSV uploader with row-level validation errors (`roster_import_errors`) · candidate photo (Supabase Storage, signed access, server-enforced limits) |
-| **Won't (this build)** | Email notifications beyond auth OTP · analytics · audit log UI (DB already logs via `created_at`/`approved_by`) · custom design system / visual polish pass — frontend stays minimal and functional |
-| **Cut order if a session runs long** | Could → Should (keep the 3 unit tests, cut nothing else) → if still tight, Institution Admin approves everything and Department Admin tier is deferred |
+Solo engineer workflow — one IDE open at a time in a serial pipeline: finish a phase, review diff, verify quality gates, and commit before advancing.
 
-## Code conventions
+### IDE Division of Labor
+- **Antigravity**: Handles high-stakes reasoning, requirements locking, database & RLS design, testing, security review, and DevOps. Planning Mode enforces reviewable specifications before code modification.
+- **Trae**: Handles rapid frontend screen generation and iterative component scaffolding (SOLO for initial pass, Builder/Chat for screen-by-screen iteration).
 
-- Migrations: one file per logical change under `supabase/migrations/`, named `<timestamp>_<snake_case_description>.sql`.
-- Commits: conventional commits (`feat:`, `fix:`, `chore:`, `test:`).
-- Frontend: default Tailwind utility classes, no custom design tokens or component library work in this build — working and correct beats polished.
-- Every schema/policy change is proposed as an OpenSpec change before implementation: `/opsx:propose <name>` → review `proposal.md`/`design.md`/`tasks.md` → `/opsx:apply` → `/opsx:archive`.
-- Service-role Supabase key never appears outside `supabase/functions/` secrets.
+---
 
-## Agent roster (installed via agency-agents)
+### Phase 0 — Environment & Repo Setup
+- **IDE**: Antigravity · **Mode**: Agent Mode · **Model**: Claude Sonnet 4.6 / Gemini 3.8 Flash
+- **Agents**: DevOps Automator, Git Workflow Master
+- **Prompt**:
+  ```text
+  You are acting as DevOps Automator and Git Workflow Master.
+  Read AGENTS.md in full.
+  Set up the repo:
+  1. Initialize Next.js 14 App Router, TypeScript, Tailwind.
+  2. Install and initialize OpenSpec CLI.
+  3. Ensure directory structure: openspec/changes/, openspec/specs/, supabase/migrations/, supabase/functions/, app/, components/, tests/.
+  4. Configure .env.local with Supabase dev credentials.
+  5. Generate synthetic CSV roster sample (15-20 rows) at sample-data/roster.csv.
+  6. Verify clean initial git status with conventional commit config.
+  ```
+- **Exit Criteria**: Next.js app boots, Supabase credentials wired, OpenSpec initialized, synthetic CSV ready.
 
-`./scripts/install.sh --tool antigravity` for Antigravity. Trae isn't a listed install target — point Trae's rules file at the same generated Cursor-style output (`./scripts/convert.sh` then `--tool cursor`) since Trae reads AGENTS.md/Cursor-style rule files.
+---
 
-| Agent | Source path | Used in phase |
-|---|---|---|
-| Workflow Architect | `specialized/specialized-workflow-architect.md` | 1 |
-| Software Architect | `engineering/engineering-software-architect.md` | 2, 1 |
-| Backend Architect | `engineering/engineering-backend-architect.md` | 2, 3 |
-| Database Optimizer | `engineering/engineering-database-optimizer.md` | 2, 3 |
-| Frontend Developer | `engineering/engineering-frontend-developer.md` | 4 |
-| Senior Developer | `engineering/engineering-senior-developer.md` | 4 |
-| Rapid Prototyper | `engineering/engineering-rapid-prototyper.md` | 4 |
-| Autonomous Optimization Architect | `engineering/engineering-autonomous-optimization-architect.md` | 3 |
-| Evidence Collector | `testing/testing-evidence-collector.md` | 5 |
-| Reality Checker | `testing/testing-reality-checker.md` | 5 |
-| Test Automation Engineer | `testing/testing-test-automation-engineer.md` | 5 |
-| Minimal Change Engineer | `engineering/engineering-minimal-change-engineer.md` | 3, 4 |
-| Security Architect | `security/security-architect.md` | 2, 6 |
-| AI-Generated Code Security Auditor | `security/security-ai-generated-code-auditor.md` | 6 |
-| Identity & Access Engineer | `engineering/engineering-identity-access-engineer.md` | 6 |
-| Git Workflow Master | `engineering/engineering-git-workflow-master.md` | 0, 7 |
-| DevOps Automator | `engineering/engineering-devops-automator.md` | 0, 7 |
-| SRE | `engineering/engineering-sre.md` | 7 |
-| Technical Writer | `engineering/engineering-technical-writer.md` | 8 |
+### Phase 1 — Requirements Lock & Planning
+- **IDE**: Antigravity · **Mode**: Planning Mode · **Model**: Gemini 3.1 Pro (High)
+- **Agents**: Workflow Architect, Software Architect
+- **Prompt**:
+  ```text
+  Acting as Workflow Architect and Software Architect.
+  Read AGENTS.md completely. Do not write implementation code in this session — Planning Mode only.
+  Task: produce OpenSpec proposal for the Must+Should+Could scope in AGENTS.md.
+  Run: /opsx:propose voting-platform-v1
+  In proposal.md: define problem statement, MoSCoW tier rationale, and explicit out-of-scope items.
+  In specs/: document requirements and Given/When/Then scenarios for all tiers.
+  In design.md: map user-facing flows (voter OTP, institution signup, eligibility, voting lock, platform metrics).
+  ```
+- **Exit Criteria**: `openspec/changes/voting-platform-v1/` contains reviewed `proposal.md`, `specs/`, and `design.md`.
 
-## IDE routing & fallback
+---
 
-**Constraints for this build: same-day delivery, zero spend, GUI-only** (no CLI AI tools, no API credits). Full phase-by-phase prompts live in `SDLC_IDE_PLAYBOOK.md`; the full current-state comparison, one-day sequencing strategy, and fallback ladder live in `CONTINGENCY_MATRIX.md`. Summary:
+### Phase 2 — System & Database Design (Schema + RLS)
+- **IDE**: Antigravity · **Mode**: Agent Mode · **Model**: Claude Opus 4.6 (or Gemini 3.1 Pro High)
+- **Agents**: Backend Architect, Database Optimizer, Security Architect
+- **Schedule**: Execute early in the day when reasoning quota is fresh.
+- **Prompt**:
+  ```text
+  Acting as Backend Architect, Database Optimizer, and Security Architect.
+  Read AGENTS.md's "Database schema" and "Row Level Security policies" sections and design.md.
+  Base schema and RLS policies are LOCKED. Extend them for Could-tier items:
+  1. Platform Admin cross-institution RPC (get_platform_metrics) with aggregate counts only.
+  2. CSV roster import error tracking table (roster_import_errors) with institution-scoped RLS.
+  3. Candidate photo Supabase Storage bucket policy (public read for approved candidates only).
+  Write design updates and tasks.md with SQL blocks. Name specific cross-tenant leak scenarios prevented by each policy.
+  ```
+- **Exit Criteria**: `design.md` and `tasks.md` updated with exact SQL definitions and named leak scenarios.
 
-| Priority | Tool | Role | Constraint |
+---
+
+### Phase 3 — Backend Implementation
+- **IDE**: Antigravity · **Mode**: Agent Mode · **Model**: Claude Sonnet 4.6
+- **Agents**: Backend Architect, Database Optimizer, Autonomous Optimization Architect, Minimal Change Engineer
+- **Prompt**:
+  ```text
+  Acting as Backend Architect, Database Optimizer, and Minimal Change Engineer.
+  Read tasks.md and implement ONLY what is specified:
+  1. Apply all Postgres migrations in supabase/migrations/ with RLS on every table.
+  2. Implement create_institution_and_admin, claim_voter_profile, get_election_results, and get_platform_metrics RPCs.
+  3. Implement CSV roster upload parser Edge Function (logging errors to roster_import_errors).
+  4. Verify migrations apply cleanly without errors.
+  ```
+- **Exit Criteria**: Migrations apply cleanly (`supabase db push`), all RPCs callable, edge function validates rows.
+
+---
+
+### Phase 4 — Frontend Implementation
+- **IDE**: Trae · **Mode**: SOLO Mode (1 run) for full scaffold, Builder Mode for iterative refinements · **Model**: Claude Sonnet 4.6
+- **Agents**: Frontend Developer, Rapid Prototyper, Senior Developer
+- **Step 4a (SOLO scaffold)**:
+  ```text
+  Acting as Frontend Developer and Rapid Prototyper.
+  Read AGENTS.md. Connect Next.js frontend to existing Supabase backend:
+  1. Voter flow: OTP login → roster claim → eligible elections list → candidate list → self-nomination form → voting booth → locked results.
+  2. Institution Admin portal: CSV uploader with row errors, election creator, candidate approval table.
+  3. Department Admin portal: department-scoped election creator and candidate approval view.
+  4. Platform Admin dashboard: global metrics view (total tenants, total votes, active elections).
+  Use default Tailwind classes; functional and correct beats polished design.
+  ```
+- **Step 4b (Builder iteration)**: Refine components screen-by-screen (e.g., CSV error reporting table, photo upload previews).
+- **Exit Criteria**: All screens render, interact with Supabase, and reflect database-level RLS gates.
+
+---
+
+### Phase 5 — Testing & QA
+- **IDE**: Antigravity · **Mode**: Agent Mode with browser verification · **Model**: Claude Sonnet 4.6
+- **Agents**: Evidence Collector, Reality Checker, Test Automation Engineer
+- **Prompt**:
+  ```text
+  Acting as Test Automation Engineer, Evidence Collector, and Reality Checker.
+  Write and execute:
+  1. The 3 required integrity tests: double-vote rejection, closed-election rejection, tally math accuracy.
+  2. Cross-tenant leak tests: verify Institution A user cannot read Institution B data.
+  3. End-to-end browser walkthrough of voter and admin journeys with screenshot artifacts.
+  Do not mark passing without green test output or visual proof.
+  ```
+- **Exit Criteria**: `npm.cmd run test` passes, cross-tenant isolation verified, screenshot artifacts saved.
+
+---
+
+### Phase 6 — Security Review
+- **IDE**: Antigravity · **Mode**: Agent Mode · **Model**: Claude Opus 4.6 (or Gemini 3.1 Pro High)
+- **Agents**: Security Architect, AI-Generated Code Security Auditor, Identity & Access Engineer
+- **Schedule**: Execute immediately after Phases 3–5.
+- **Prompt**:
+  ```text
+  Acting as Security Architect, AI-Generated Code Security Auditor, and Identity & Access Engineer.
+  Audit codebase for:
+  1. Hardcoded secrets or service_role key leaked to client.
+  2. RLS policy verification against named cross-tenant leak scenarios.
+  3. Privilege escalation prevention in profiles_update_own and claim_voter_profile.
+  4. Multi-tenant registration abuse and slug collisions in create_institution_and_admin.
+  5. Server-enforced candidate photo storage policies.
+  Rank findings by severity. Flag all Critical/High issues.
+  ```
+- **Exit Criteria**: Zero Critical/High findings; all Medium/Low risks documented and addressed.
+
+---
+
+### Phase 7 — DevOps & Deployment
+- **IDE**: Antigravity · **Mode**: Agent Mode · **Model**: Gemini 3.8 Flash / Claude Sonnet 4.6
+- **Agents**: DevOps Automator, SRE, Git Workflow Master
+- **Prompt**:
+  ```text
+  Acting as DevOps Automator, SRE, and Git Workflow Master.
+  1. Verify GitHub Actions CI pipeline (.github/workflows/ci.yml) testing local Supabase stack on PRs.
+  2. Verify GitHub Actions CD pipeline (.github/workflows/deploy-migrations.yml) applying migrations on push to main.
+  3. Verify Netlify production environment secrets configuration.
+  4. Ensure operational runbook procedures are documented in README.md.
+  ```
+- **Exit Criteria**: CI passes on PRs, deployment secrets documented, zero credentials tracked in git.
+
+---
+
+### Phase 8 — Documentation & Governance Handoff
+- **IDE**: Antigravity · **Mode**: Agent Mode · **Model**: Technical Writer, Workflow Architect
+- **Prompt**:
+  ```text
+  Acting as Technical Writer and Workflow Architect.
+  1. Consolidate developer guidance and operational runbooks into README.md.
+  2. Consolidate locked specifications, playbooks, fallback matrices, and error resolutions into AGENTS.md.
+  3. Archive completed OpenSpec changes via openspec validate --specs.
+  4. Update AGENTS.md Changelog.
+  ```
+- **Exit Criteria**: Documentation 100% synchronized, OpenSpec living specs verified, changelog updated.
+
+---
+
+## 10. Quota Governance, Contingency Fallbacks & Clarity Checkpoints
+
+### 10.1. One-Day Sprint Mode (Zero-Spend, GUI-Only)
+- **Hard Constraints**: Delivery in one day. Zero spend (no paid tiers, no credit cards). GUI-only tools (Antigravity, Trae, browser).
+- **Check Quota First**: Before sequencing, open Antigravity → Settings → Models and inspect the actual refresh countdowns.
+- **Front-Load Reasoning**: Schedule Phase 2 (schema/RLS) and Phase 6 (security review) early when Opus/Pro quota is fresh.
+- **Conserve Frontier Quotas**: Route routine phases (0, 1, 3, 5, 7, 8) to Claude Sonnet 4.6 or Gemini 3.8 Flash.
+
+### 10.2. Five-Tier Fallback Ladder
+
+```
+[Tier 1: Antigravity Model Switch]
+   ↓ (if Opus exhausted, switch to Gemini 3.1 Pro High or Gemini 3.8 Flash in same window)
+[Tier 2: Trae Mode Switch]
+   ↓ (if SOLO runs exhausted, drop to Builder / Chat mode)
+[Tier 3: Gemini Code Assist]
+   ↓ (free GUI extension in editor panel, repo-aware, non-RLS tasks)
+[Tier 4: DeepSeek Web Chat]
+   ↓ (chat.deepseek.com, large context paste, human acts as test runner)
+[Tier 5: Gemini App / Canvas]
+     (browser canvas with live code execution pane)
+```
+
+### 10.3. Emergency RLS Compensating Protocol
+If Antigravity is completely unavailable mid-Phase 2 or Phase 6, you may draft RLS policies in Tier 4 (DeepSeek) **strictly** under these guardrails:
+1. Paste the locked schema and RLS sections from `AGENTS.md` verbatim — never allow the model to rewrite table structures.
+2. Require the model to name the exact cross-tenant leak scenario prevented by every generated policy.
+3. Do not commit code until you run the complete test suite locally:
+   ```bash
+   npm.cmd run test
+   ```
+4. Perform an explicit line-by-line manual code audit of all generated SQL before applying.
+
+### 10.4. Context Continuity Template (for External Browser Chats)
+```text
+Context (from AGENTS.md):
+[paste locked schema table or RLS policy]
+
+Current file (path/to/file.ext):
+[paste current content]
+
+Task: [single file, single concern, narrow scope]
+
+Constraints: Functional Tailwind styling only, no new dependencies, do not touch RLS or voting status logic without emergency protocol. Output the complete updated file.
+```
+
+### 10.5. Per-Phase Contingency Matrix
+
+| Phase | Primary Tool & Model | If Model Quota Gone | If Tool Fully Locked Out |
 |---|---|---|---|
-| 1st | Antigravity (GA, $0/individual) | planning, DB/RLS design, backend, testing, security, devops | free-tier refresh mechanic is reported inconsistently across sources (5-hour rolling vs. weekly) — check Settings → Models yourself before sequencing the day, see `CONTINGENCY_MATRIX.md` §0a |
-| 2nd | Trae (free tier) | frontend scaffold (SOLO once) + iteration (Builder) | 5,000 autocompletions/mo, 2 concurrent cloud tasks; exact free-tier SOLO run count is not confirmed current — check Settings → Usage in Phase 0 |
-| 3rd (external, GUI extension) | Gemini Code Assist (free, installed via Extensions panel — no terminal) | routine edits, iteration, non-RLS bug fixes when both above are quota-exhausted | repo-aware context; reported daily limits vary by source — verify in the extension itself |
-| 4th (external, browser) | DeepSeek (chat.deepseek.com, free) | isolated components, doc drafting, debugging pasted errors | plain web chat, no repo access, no tool-calling, no test execution |
-| 5th (external, browser, last resort) | Gemini app / Canvas (free) | same as DeepSeek, plus live code execution via Canvas | plain chat otherwise; free-tier context figures conflict across sources |
+| **0 — Setup** | Antigravity, Sonnet 4.6 | Gemini 3.8 Flash | Perform manually in Supabase / GitHub dashboards |
+| **1 — Requirements** | Antigravity, Gemini 3.1 Pro High | Claude Sonnet 4.6 | Draft prose in DeepSeek, migrate into OpenSpec later |
+| **2 — Schema & RLS** | Antigravity, Opus 4.6 | Gemini 3.1 Pro High | Emergency RLS Compensating Protocol in DeepSeek |
+| **3 — Backend** | Antigravity, Sonnet 4.6 | Gemini 3.8 Flash | Tier 3 (Gemini Code Assist) for non-RLS files |
+| **4 — Frontend** | Trae, SOLO scaffold | Trae Builder / Chat | Tier 3 (Gemini Code Assist) screen-by-screen |
+| **5 — Testing & QA** | Antigravity, Sonnet 4.6 | Gemini 3.8 Flash | Run `npm.cmd run test` locally by hand |
+| **6 — Security Review** | Antigravity, Opus 4.6 | Gemini 3.1 Pro High | Emergency Protocol in DeepSeek + manual audit |
+| **7 — DevOps** | Antigravity, Gemini Flash | Any Antigravity model | Tier 3/4 for isolated CI config snippets |
+| **8 — Documentation** | Antigravity, Flash / Sonnet | Any Antigravity model | Tier 4 (DeepSeek) / Tier 5 (Gemini Canvas) |
 
-Never let any external fallback (3rd–5th) touch RLS policies or the `votes`/`elections` status-gating logic without the same review rigor as Antigravity's Phase 2/Phase 6 — none of them can run your tests for you. **Because this build can't wait for a quota reset, `CONTINGENCY_MATRIX.md` §2 defines a narrow, explicit emergency exception** for Phase 2/6 if Antigravity is completely dead — it trades increased risk for same-day delivery deliberately and requires immediately re-running the full leak-test suite against anything produced that way. It is not a casual substitute for the primary path.
+### 10.6. Discrete Clarity Checkpoints
 
-## Changelog
+#### §10.6a. Pre-Flight Checkpoint (Before Starting)
+1. Did you inspect Antigravity's real countdown in Settings → Models?
+2. Is Phase 2 scheduled early in the day?
+3. Which Could-tier items are confirmed for today vs. deferred?
+4. Are dev Supabase credentials and sample CSV data confirmed?
 
+#### §10.6b. Mid-Work Phase Gates (Before Moving to Next Phase)
+1. Did you read the actual git diff, especially for RLS, migrations, and auth?
+2. Do all exit criteria hold via verified test executions, not model assertions?
+3. If an external fallback was used, did it follow the Emergency Compensating Protocol?
+4. Are you conserving Opus / Pro quotas for security and schema phases?
+
+#### §10.6c. Delivery Gate (Phase 8 Completion)
+1. Does every Must + Should item have a passing automated test or screenshot?
+2. Are all Phase 6 Critical/High security findings resolved?
+3. Is git history clean of all API keys, database passwords, and secrets?
+4. Are `README.md` and `AGENTS.md` 100% up to date with no dangling links?
+
+---
+
+## 11. Technical Gotchas & Error Resolutions
+
+This section records resolved environment, compiler, and framework gotchas to prevent regression:
+
+### 1. Untyped Supabase Cookie Callbacks
+- **Symptom**: `Parameter 'cookiesToSet' implicitly has an 'any' type.` in `app/auth/callback/route.ts`, `lib/supabase/server.ts`, and `middleware.ts`.
+- **Cause**: `@supabase/ssr` callback handlers missing explicit type annotations under strict TypeScript settings.
+- **Resolution**: Import `CookieOptions` from `@supabase/ssr` and type the parameter explicitly:
+  ```typescript
+  cookiesToSet.forEach(({ name, value, options }: { name: string; value: string; options: CookieOptions }) => {
+    cookieStore.set(name, value, options);
+  });
+  ```
+
+### 2. Next.js Type-Checking Deno Edge Functions
+- **Symptom**: `Cannot find module 'https://deno.land/std@0.192.0/http/server.ts' or its corresponding type declarations.`
+- **Cause**: Next.js TypeScript compiler evaluated `supabase/functions/`, which are Deno modules, not Node modules.
+- **Resolution**: Exclude `supabase/functions` in `tsconfig.json`:
+  ```json
+  "exclude": ["node_modules", "supabase/functions"]
+  ```
+
+### 3. Jest Discovery Collision with Playwright E2E Suites
+- **Symptom**: `Cannot use import statement outside a module` when running `npm run test`.
+- **Cause**: Jest discovered Playwright browser test files in `tests/e2e/`, which require ES module execution.
+- **Resolution**: Scope Jest discovery in `jest.config.js` to unit and integration suites only:
+  ```javascript
+  testMatch: [
+    '<rootDir>/tests/unit/**/*.test.ts',
+    '<rootDir>/tests/integration/**/*.test.ts',
+  ],
+  ```
+
+### 4. React Hooks `exhaustive-deps` Warnings
+- **Symptom**: Non-fatal build warnings in `app/elections/[id]/nominate/page.tsx` and `app/elections/[id]/vote/page.tsx`.
+- **Status**: Documented as non-blocking. Do not modify dependency arrays without targeted regression tests to avoid re-triggering authentication loops.
+
+### 5. Windows PowerShell Script Execution Policy
+- **Symptom**: `npm : File C:\Program Files\nodejs\npm.ps1 cannot be loaded because running scripts is disabled on this system.`
+- **Resolution**: Invoke npm commands via `npm.cmd` (e.g., `npm.cmd run build`, `npm.cmd run test`).
+
+---
+
+## 12. MoSCoW Scope & Proactive Cut Order
+
+| Tier | Capabilities Included |
+|---|---|
+| **Must** | Multi-tenant core (`institutions`, `profiles`, `roster`) + RLS · Passwordless OTP auth · Multi-level elections (dept/year scope) · Self-nomination + Admin approval · Voting with `UNIQUE` + status lock · Results hidden until close. |
+| **Should** | Department Admin role (`department_admin`) with department-scoped election governance · Unit test suite (double-vote rejection, closed-election rejection, tally math accuracy). |
+| **Could** | Platform Admin dashboard with cross-institution aggregate RPC (`get_platform_metrics`) · CSV uploader with row-level error logging (`roster_import_errors`) · Candidate photo upload with Supabase Storage policies. |
+| **Won't (This Pass)** | Push notifications/SMS beyond auth OTP · Deep voter turnout analytics · Public audit log UI (DB preserves audit timestamps) · Bespoke design systems / visual polish pass. |
+
+**Proactive Cut Order (if time is compressed)**:
+Could tier (photos, CSV errors) → Should tier (retain 3 unit tests at all costs) → Defer Department Admin to Institution Admin approvals.
+
+---
+
+## 13. Code Conventions & Agent Roster
+
+### Conventions
+- **Migrations**: One file per logical change under `supabase/migrations/`, named `<timestamp>_<snake_case_description>.sql`.
+- **Commits**: Conventional commits (`feat:`, `fix:`, `chore:`, `test:`, `docs:`).
+- **OpenSpec Protocol**: Every schema/policy modification starts with an OpenSpec proposal: `/opsx:propose <name>` → review `proposal.md`/`design.md`/`tasks.md` → `/opsx:apply` → `/opsx:archive`.
+- **Secrets Rule**: Service role key never appears in client-accessible code.
+
+### Agent Persona Roster
+
+| Agent Persona | Role Description | Used in Phases |
+|---|---|:---:|
+| **Workflow Architect** | Maps user journeys, state transitions, and failure recoveries | 1, 8 |
+| **Software Architect** | System structure, tenant boundaries, and modular interfaces | 1, 2 |
+| **Backend Architect** | Supabase database, Edge Functions, and server APIs | 2, 3 |
+| **Database Optimizer** | PostgreSQL schema indexes, query performance, and constraints | 2, 3 |
+| **Frontend Developer** | Next.js App Router, React hooks, and component logic | 4 |
+| **Senior Developer** | High-reliability code implementation and component patterns | 4 |
+| **Rapid Prototyper** | Fast end-to-end screen scaffolding and interface wireframing | 4 |
+| **Minimal Change Engineer** | Guardrail against scope creep and speculative refactoring | 3, 4 |
+| **Evidence Collector** | Visual verification, test execution logs, and proof capture | 5 |
+| **Reality Checker** | Objective quality gatekeeper; rejects unproven assertions | 5 |
+| **Test Automation Engineer** | Automated unit, integration, and E2E test suites | 5 |
+| **Security Architect** | Threat modeling, RLS boundary audits, and leak prevention | 2, 6 |
+| **AI-Generated Code Auditor** | Reviews AI-written code for hardcoded secrets and flaws | 6 |
+| **Identity & Access Engineer** | Auth flows, session lifecycle, and multi-tenant authorization | 6 |
+| **DevOps Automator** | CI/CD pipelines, Docker environments, and cloud infrastructure | 0, 7 |
+| **Git Workflow Master** | Branching strategy, conventional commits, and clean history | 0, 7 |
+| **SRE** | Production reliability, incident response, and runbooks | 7 |
+| **Technical Writer** | Clear, runnable, developer-first documentation | 8 |
+
+---
+
+## 14. Changelog
+
+- `v6` — **Full Documentation & Playbook Consolidation:**
+  - Consolidated `ARCHITECTURE.md`, `CONTINGENCY_MATRIX.md`, `ERROR_RESOLUTION.md`, `RUNBOOK.md`, and `SDLC_IDE_PLAYBOOK.md` into `AGENTS.md` and `README.md`.
+  - Dissipated redundant standalone files to establish two authoritative sources of truth: `README.md` (developer overview, architecture, runbook) and `AGENTS.md` (complete agent instructions, locked schemas, 9-phase playbook, quota matrices, error resolution knowledge base).
+  - Validated all build, test, and lint commands with Windows PowerShell compatibility (`npm.cmd`).
 - `v5` — **Full V1 Implementation Shipped (Phases 0–8 complete):**
-  - **Shipped Scope (Must + Should + Could):**
-    - **Must-tier:** Multi-tenant core (`institutions`, `profiles`, `roster`, `elections`, `candidates`, `votes`) with RLS on every table; passwordless OTP authentication (voter + admin); multi-level elections (institution-wide or department/year scoped); candidate self-nomination + admin approval; vote casting enforced at DB level via `UNIQUE(voter_id, election_id)` + `voting_open` status gate; election results hidden until closed via `get_election_results()` RPC.
-    - **Should-tier:** Department Admin tier (`department_admin`) with department-scoped election and candidate governance; automated test suite validating double-vote rejection, closed-election rejection, and tally math accuracy.
-    - **Could-tier:** Platform Admin dashboard and cross-institution aggregate metrics RPC (`get_platform_metrics()`) with zero raw table grants; CSV roster import with row-level error validation (`roster_import_errors`); candidate photo uploads via Supabase Storage with status-gated public read access.
-    - **Phase 6 Security Hardening:** Migrated institution + admin profile creation to atomic `create_institution_and_admin` `SECURITY DEFINER` RPC (eliminating client-side role manipulation); hardened `claim_voter_profile` to prevent profile re-claiming and institution hopping; verified zero cross-tenant leaks.
-    - **Phase 7 DevOps & Delivery:** GitHub Actions CI (`ci.yml`) with local Supabase stack testing; GitHub Actions CD (`deploy-migrations.yml`) for automated migration deployment; Netlify deployment configuration; production `RUNBOOK.md`.
-    - **Phase 8 Governance:** OpenSpec change `voting-platform-v1` validated and archived into `openspec/specs/` across 10 capability specifications (`authentication`, `candidate-photos`, `department-admin`, `elections`, `nominations`, `platform-admin`, `results`, `roster-import`, `tenant-management`, `voting`); comprehensive `README.md` authored. Antigravity primary maintained throughout (no emergency fallback required).
-  - **What Remains Open / Deferred:**
-    - **Won't tier (by design):** Automated email notifications beyond Supabase Auth OTP; deep turnout and voter behavior analytics; user-facing admin audit log UI (DB maintains timestamps); custom design system / bespoke visual polish pass.
-    - **Deferred Phase 6 Findings:** External CAPTCHA / bot protection (Cloudflare Turnstile) on public institution registration; chunked streaming CSV parser for massive rosters (>10k rows).
-- `v4` — Recompressed for a same-day, zero-spend, GUI-only build: added `CONTINGENCY_MATRIX.md` §0 "One-Day Sprint Mode" (check real quota countdown first, front-load Phase 2/6 early in the day, proactive MoSCoW cut-before-Phase-1 instead of emergency-only); removed CLI-based tools (Gemini CLI) and the Anthropic API credit route from the fallback ladder per confirmed constraints; replaced "wait for the weekly reset" with an explicit, risk-acknowledged emergency protocol for Phase 2/6 if Antigravity is fully exhausted; Phase 0 now includes live Supabase project creation and synthetic CSV generation since no real groundwork exists yet.
-- `v3` — Added `CONTINGENCY_MATRIX.md`: Sept 2026 reality check (Antigravity now GA with shared weekly quota pool, not per-model; Trae restructured into 5 paid tiers); replaced the single chat.z.ai fallback with a five-tier ladder (in-tool model/mode switch → Gemini Code Assist → DeepSeek → Gemini app) scoped to actual confirmed access (DeepSeek + Gemini, no Kimi, Antigravity free/preview account, Trae free tier); added discrete pre-work/mid-work/delivery clarity checkpoints (§4a/4b/4c) referenced from each phase gate in `SDLC_IDE_PLAYBOOK.md`.
-- `v2` — Restructured to match the agents.md open-format convention; absorbed ARCHITECTURE.md schema/RLS/flows inline; added Could-tier `roster_import_errors` table and candidate photo storage notes; frontend scope reduced to minimal/functional; added chat.z.ai emergency fallback tier.
-- `v1` — Initial version, referenced ARCHITECTURE.md externally instead of absorbing it.
+  - Shipped Must, Should, and Could tiers.
+  - Hardened security with `create_institution_and_admin` atomic RPC and re-claim prevention in `claim_voter_profile`.
+  - Configured GitHub Actions CI/CD pipelines, Netlify hosting, and OpenSpec living specs across 10 capability domains.
+- `v4` — Recompressed for same-day, zero-spend, GUI-only sprint mode with emergency RLS protocol.
+- `v3` — Integrated quota reality checks and 5-tier fallback ladder.
+- `v2` — Absorbed base architecture inline and added Could-tier error tables and candidate photo specifications.
+- `v1` — Initial multi-tenant voting system architecture.
