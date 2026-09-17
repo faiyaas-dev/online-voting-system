@@ -6,7 +6,7 @@
 **Organization reference:** `okvwbyzdevidovjnwlth`
 **Region:** `ap-south-1`
 **Report date:** 2026-09-17
-**Status:** Management API linking succeeds; CI migration verification requires explicit IPv4 pooler setup.
+**Status:** Resolved. GitHub Actions migration deployment succeeds through an explicit IPv4 Supavisor session-pooler URL.
 
 ## Executive summary
 
@@ -15,19 +15,7 @@ The deployment problem originally appeared to be a general Supabase authenticati
 1. **Supabase Management API access**, used by `supabase link`.
 2. **Direct PostgreSQL access**, used by `supabase migration list` and `supabase db push`.
 
-The project reference is valid, the Supabase account token can list the project, and the CLI link step succeeds. The current CI failure occurs immediately afterward because the GitHub-hosted runner cannot use the project's direct IPv6 database host:
-
-```text
-GET https://api.supabase.com/v1/projects/ogfbnxqlzetdjxijufpw/api-keys
-Authorization failed for the access token and project ref pair
-```
-
-```text
-IPv6 is not supported on your current network
-Run supabase link --project-ref *** to setup IPv4 connection.
-```
-
-The database password must be passed explicitly to `supabase link` so the CLI can configure the project's IPv4 pooler connection for subsequent migration commands.
+The project reference is valid, the Supabase account token can list the project, the CLI link step succeeds, and migrations now deploy successfully. The decisive infrastructure issue was that GitHub-hosted runners cannot use the project's direct IPv6 database hostname. The final workflow avoids that path by constructing and passing an explicit IPv4 Supavisor session-pooler URL.
 
 ## Project and deployment context
 
@@ -57,6 +45,112 @@ The job uses the GitHub `production` environment and expects these secrets:
 | `SUPABASE_DB_PASSWORD` | Direct PostgreSQL authentication |
 
 No secret values are recorded in this report.
+
+## Complete incident timeline
+
+### Phase 1: application and pipeline preparation
+
+Before the credential investigation, the repository had frontend, database, and CI changes from the voting-platform implementation. The deployment pipeline then exposed several independent issues:
+
+- Playwright voter assertion type mismatch.
+- Admin E2E selector mismatch after the CSV upload button changed.
+- Non-idempotent `pg_cron` unscheduling migration.
+- Invalid audit-report migration SQL.
+- Missing project-reference validation.
+
+These were fixed separately. CI later passed in [run 35182689326](https://github.com/faiyaas-dev/online-voting-system/actions/runs/35182689326), proving that the general repository test pipeline was healthy.
+
+### Phase 2: malformed project reference
+
+The first Supabase deployment failure involved a malformed GitHub `SUPABASE_PROJECT_ID`. The value was 16 characters, while a Supabase project reference must be exactly 20 lowercase letters/digits.
+
+The valid reference was recovered from the project's Supabase URL and local metadata:
+
+```text
+ogfbnxqlzetdjxijufpw
+```
+
+The workflow gained a preflight check so this class of error now fails immediately with a clear message.
+
+### Phase 3: CLI execution was made reproducible
+
+The workflow was changed from the setup action to a pinned CLI invocation:
+
+```bash
+npx --yes supabase@2.117.0
+```
+
+This removed ambiguity about which CLI version was running and made the malformed-reference error visible.
+
+### Phase 4: Management API authorization
+
+The first valid-reference attempt failed while `supabase link` requested project API keys:
+
+```text
+GET /v1/projects/ogfbnxqlzetdjxijufpw/api-keys
+Authorization failed for the access token and project ref pair
+```
+
+The important distinction was established by testing:
+
+```powershell
+npx.cmd --yes supabase@2.117.0 projects list
+```
+
+At first this also returned `Unauthorized`. A replacement token from an account with project access then made `projects list` succeed and returned the target project. Linking subsequently succeeded, proving that the Management API credential problem had been resolved.
+
+### Phase 5: direct database connection and IPv6 failure
+
+After linking succeeded, migration verification failed:
+
+```text
+IPv6 is not supported on your current network
+Run supabase link --project-ref *** to setup IPv4 connection.
+```
+
+This was not another token problem. GitHub Actions could reach the Supabase Management API but could not reach the project's direct IPv6 database hostname.
+
+Passing `--password` to `link`, then to `migration list` and `db push`, did not solve the issue because the CLI still selected the direct IPv6 path on the ephemeral runner.
+
+### Phase 6: unreliable pooler metadata assumption
+
+The next attempt tried to read:
+
+```text
+supabase/.temp/pooler-url
+```
+
+The GitHub runner showed:
+
+```text
+cat: supabase/.temp/pooler-url: No such file or directory
+```
+
+This demonstrated that local CLI metadata cannot be assumed to exist in a fresh CI workspace, even after `supabase link` reports success.
+
+### Phase 7: final working solution
+
+The final workflow now:
+
+1. Links the project using the Management API token and database password.
+2. Calls `GET https://api.supabase.com/v1/projects/{project-ref}`.
+3. Reads the authoritative project region from the API response.
+4. Builds the documented Supavisor session-mode URL on port `5432`:
+
+   ```text
+   postgresql://postgres.<project-ref>:<encoded-password>@aws-0-<region>.pooler.supabase.com:5432/postgres
+   ```
+
+5. Masks the complete URL in GitHub Actions.
+6. Runs both migration commands with `--db-url`.
+
+The successful deployment confirmed the solution:
+
+- Checkout used commit `3338da5`.
+- `supabase link` completed.
+- Pooler URL configuration completed.
+- Migration state verification completed.
+- Migrations were pushed successfully.
 
 ## What was investigated
 
@@ -222,8 +316,6 @@ The remaining deployment blocker is an **IPv6-to-IPv4 database connection setup 
 
 The evidence does not currently indicate a wrong project ID, wrong database password, broken migration SQL, invalid CLI version, or GitHub Actions syntax failure.
 
-The evidence does **not** currently indicate a wrong project ID, wrong database password, broken migration SQL, invalid CLI version, or GitHub Actions syntax failure.
-
 ## Recovery procedure
 
 ### Step 1: verify the token-owning account
@@ -242,19 +334,20 @@ Supabase documents the organization/project roles in its [Access Control documen
 
 Use the database password for this same Supabase project. Do not substitute the access token, anon key, service-role key, account password, or project URL.
 
-### Step 3: test the replacement token locally
+### Step 3: test the credentials locally
 
 In a new PowerShell process:
 
 ```powershell
 Remove-Item Env:SUPABASE_ACCESS_TOKEN -ErrorAction SilentlyContinue
-$env:SUPABASE_ACCESS_TOKEN = Read-Host "Paste replacement Supabase access token"
+$env:SUPABASE_ACCESS_TOKEN = Read-Host "Paste Supabase access token"
+$env:SUPABASE_DB_PASSWORD = Read-Host "Paste Supabase database password"
 
 npx.cmd --yes supabase@2.117.0 projects list
 npx.cmd --yes supabase@2.117.0 link `
   --project-ref ogfbnxqlzetdjxijufpw `
   --password $env:SUPABASE_DB_PASSWORD `
-  --debug
+  --password $env:SUPABASE_DB_PASSWORD
 ```
 
 Expected result:
@@ -263,7 +356,7 @@ Expected result:
 Finished supabase link.
 ```
 
-If `projects list` fails with `Unauthorized`, the token is invalid, revoked, expired, or incorrectly copied. If linking succeeds but migration access still reports IPv6, confirm that the password was passed with `--password`.
+If `projects list` fails with `Unauthorized`, the token is invalid, revoked, expired, or incorrectly copied. If linking succeeds but migration access still reports IPv6, test with the explicit Supavisor URL pattern described in the final workflow rather than relying on local link metadata.
 
 ### Step 4: update GitHub's production environment
 
@@ -272,6 +365,7 @@ Confirm these secrets are present under:
 ```text
 Repository Settings
 → Environments
+→ production
 → production
 → Environment secrets
 → Environment secrets
@@ -298,10 +392,11 @@ Run [Deploy Migrations to Supabase](https://github.com/faiyaas-dev/online-voting
 Expected order:
 
 ```text
-Validate project reference  ✓
-Link to Supabase Project    ✓
-Verify migration state      ✓
-Push Migrations             ✓
+Validate project reference       ✓
+Link to Supabase Project         ✓
+Configure IPv4 pooler connection ✓
+Verify migration state           ✓
+Push Migrations                  ✓
 ```
 
 ## Decision table for the next failure
@@ -312,7 +407,8 @@ Push Migrations             ✓
 | `projects list` returns `Unauthorized` | Token is invalid/revoked/expired | Generate and test a new token |
 | Project list omits this project | Wrong account or missing membership | Fix Supabase organization/project access |
 | `link` fails at `/api-keys` | Insufficient project-management privilege | Use a token from an Administrator/Owner or enable required API-key read access |
-| `migration list` reports IPv6 unsupported | IPv4 pooler was not configured | Pass `--password "$SUPABASE_DB_PASSWORD"` to `supabase link` |
+| `migration list` reports IPv6 unsupported | CLI selected the direct IPv6 host | Use an explicit Supavisor `--db-url`; do not use `--skip-pooler` |
+| `supabase/.temp/pooler-url` is missing | Ephemeral CI metadata is unavailable | Derive the pooler URL from the Management API project region |
 | `migration list` fails with database authentication | Database password is wrong | Reset the target project's database password and update the GitHub secret |
 | `db push` reports SQL/migration failure | Credentials are working | Fix the reported migration, not the secrets |
 
@@ -320,7 +416,7 @@ Push Migrations             ✓
 
 The project is healthy enough to list through the Management API, link successfully, and connect directly to PostgreSQL from the local environment. CI and Netlify are functioning. The migration deployment was blocked because GitHub Actions cannot use the project's direct IPv6 database host. The workflow now supplies an explicit IPv4 Supavisor session-pooler URL to both migration commands, avoiding direct-host DNS fallback and reliance on ephemeral CLI pooler metadata.
 
-The remaining user action is to rerun the workflow. If it then reports PostgreSQL authentication failure, correct `SUPABASE_DB_PASSWORD`; otherwise no token rotation is required.
+The deployment is now operational. Future incidents should first identify the failing boundary: project-reference validation, Management API authorization, direct database authentication, network address family, pooler URL construction, or SQL migration execution. These are independent failure classes and must not be debugged by rotating all three secrets at once.
 
 ## Related project references
 
