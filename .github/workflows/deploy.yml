@@ -34,16 +34,27 @@ jobs:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
           SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
 
-      - name: Verify migration state
-        run: npx --yes supabase@2.117.0 migration list --project-ref "$SUPABASE_PROJECT_ID" --password "$SUPABASE_DB_PASSWORD"
+      - name: Configure IPv4 pooler connection
+        shell: bash
         env:
-          SUPABASE_PROJECT_ID: ${{ secrets.SUPABASE_PROJECT_ID }}
-          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
           SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+        run: |
+          set -euo pipefail
+          pooler_url="$(cat supabase/.temp/pooler-url)"
+          encoded_password="$(node -e "const v=encodeURIComponent(process.argv[1]).replace(/[!'()*]/g,c=>'%' + c.charCodeAt(0).toString(16).toUpperCase()); process.stdout.write(v)" "$SUPABASE_DB_PASSWORD")"
+          pooler_url="${pooler_url/@/:${encoded_password}@}"
+          if [[ "$pooler_url" != postgresql://*@*.pooler.supabase.com:5432/* ]]; then
+            echo "::error::Supabase did not provide an IPv4 session pooler URL."
+            exit 1
+          fi
+          {
+            echo "SUPABASE_DB_URL<<SUPABASE_DB_URL_EOF"
+            echo "$pooler_url"
+            echo "SUPABASE_DB_URL_EOF"
+          } >> "$GITHUB_ENV"
+
+      - name: Verify migration state
+        run: npx --yes supabase@2.117.0 migration list --db-url "$SUPABASE_DB_URL"
 
       - name: Push Migrations
-        run: npx --yes supabase@2.117.0 db push --project-ref "$SUPABASE_PROJECT_ID" --password "$SUPABASE_DB_PASSWORD"
-        env:
-          SUPABASE_PROJECT_ID: ${{ secrets.SUPABASE_PROJECT_ID }}
-          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
-          SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+        run: npx --yes supabase@2.117.0 db push --db-url "$SUPABASE_DB_URL"
