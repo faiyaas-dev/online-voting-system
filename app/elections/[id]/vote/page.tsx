@@ -96,36 +96,36 @@ export default function VotePage({ params }: { params: { id: string } }) {
 
   return (
     <main className="max-w-lg mx-auto p-6">
-      <Link href={`/elections/${electionId}/candidates`} className="text-sm text-blue-600 underline mb-4 inline-block">← Candidates</Link>
-      <h1 className="text-xl font-bold mb-4">Vote: {election.title}</h1>
-      <form onSubmit={castVote} className="flex flex-col gap-4">
+      <Link href={`/elections/${electionId}/candidates`} className="text-sm font-bold uppercase tracking-widest text-gray-400 hover:text-white border-b border-transparent hover:border-white pb-1 transition-colors mb-8 inline-block">← Candidates</Link>
+      <h1 className="text-2xl font-extrabold uppercase tracking-widest mb-8">Vote: {election.title}</h1>
+      <form onSubmit={castVote} className="flex flex-col gap-8">
         <fieldset>
-          <legend className="text-sm font-medium mb-2">Select one candidate</legend>
-          <div className="flex flex-col gap-2">
+          <legend className="text-sm font-bold uppercase tracking-widest text-gray-400 mb-4">Select one candidate</legend>
+          <div className="flex flex-col gap-4">
             {candidates.map(c => (
-              <label key={c.id} className="flex items-start gap-3 border rounded p-3 cursor-pointer hover:bg-gray-50">
+              <label key={c.id} className={`flex items-start gap-4 border ${selected === c.id ? 'border-white bg-gray-900' : 'border-gray-800 bg-transparent'} p-4 cursor-pointer hover:border-gray-500 transition-colors`}>
                 <input
                   type="radio"
                   name="candidate"
                   value={c.id}
                   checked={selected === c.id}
                   onChange={() => setSelected(c.id)}
-                  className="mt-0.5"
+                  className="mt-1"
                 />
                 <div>
-                  <p className="font-medium">{c.profiles?.full_name ?? 'Unknown'}</p>
-                  <p className="text-sm text-gray-500">{c.profiles?.roll_no} · {c.profiles?.department}</p>
-                  {c.manifesto && <p className="text-sm text-gray-600 mt-1 line-clamp-2">{c.manifesto}</p>}
+                  <p className="font-bold text-lg">{c.profiles?.full_name ?? 'Unknown'}</p>
+                  <p className="text-xs uppercase tracking-widest text-gray-500 mt-1">{c.profiles?.roll_no} · {c.profiles?.department}</p>
+                  {c.manifesto && <p className="text-sm text-gray-400 mt-3 line-clamp-2">{c.manifesto}</p>}
                 </div>
               </label>
             ))}
           </div>
         </fieldset>
-        {error && <p className="text-red-600 text-sm">{error}</p>}
+        {error && <p className="text-red-500 text-sm font-bold uppercase tracking-wide">{error}</p>}
         <button
           type="submit"
           disabled={!selected || submitting}
-          className="bg-green-600 text-white rounded px-4 py-2 text-sm disabled:opacity-50"
+          className="bg-white text-black font-bold uppercase tracking-widest py-4 hover:bg-gray-200 transition-colors disabled:opacity-50"
         >
           {submitting ? 'Casting vote…' : 'Cast Vote'}
         </button>

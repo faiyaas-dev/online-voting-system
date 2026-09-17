@@ -1,6 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
-import SignOutButton from '@/components/SignOutButton'
+
 import CreateElectionForm from '@/components/admin/CreateElectionForm'
 import ElectionTable from '@/components/admin/ElectionTable'
 import CandidateApprovalTable from '@/components/admin/CandidateApprovalTable'
@@ -45,7 +45,7 @@ export default async function DeptAdminPage() {
             <h1 className="text-4xl font-extrabold uppercase tracking-widest">Department Admin</h1>
             <p className="text-sm font-bold tracking-widest text-gray-500 uppercase mt-2">Department: {profile.department}</p>
           </div>
-          <SignOutButton />
+          
         </header>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">

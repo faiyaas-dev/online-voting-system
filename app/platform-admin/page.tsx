@@ -1,6 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
-import SignOutButton from '@/components/SignOutButton'
+
 import type { Profile, PlatformMetric } from '@/lib/supabase/types'
 
 export default async function PlatformAdminPage() {
@@ -27,7 +27,7 @@ export default async function PlatformAdminPage() {
             <h1 className="text-4xl font-extrabold uppercase tracking-widest">Platform Admin</h1>
             <p className="text-xs font-bold tracking-widest text-gray-500 uppercase mt-2">Aggregate Metrics · Cross-Institution View</p>
           </div>
-          <SignOutButton />
+          
         </header>
 
         {error && <p className="text-red-500 font-bold uppercase tracking-widest">{error.message}</p>}

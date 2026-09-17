@@ -98,56 +98,56 @@ export default function NominatePage({ params }: { params: { id: string } }) {
     setSuccess(true)
   }
 
-  if (!election) return <main className="p-6 max-w-lg mx-auto"><p>Loading…</p></main>
+  if (!election) return <main className="p-6 max-w-lg mx-auto"><p className="text-gray-400">Loading…</p></main>
   if (election.status !== 'nomination_open') return (
     <main className="p-6 max-w-lg mx-auto">
-      <p className="text-red-600">Nominations are not open for this election.</p>
-      <Link href={`/elections/${electionId}/candidates`} className="text-blue-600 underline text-sm">← Back</Link>
+      <p className="text-red-500 font-bold uppercase tracking-widest text-sm mb-4">Nominations are not open for this election.</p>
+      <Link href={`/elections/${electionId}/candidates`} className="text-sm font-bold uppercase tracking-widest text-gray-400 border-b border-transparent hover:border-white hover:text-white pb-1 transition-colors">← Back</Link>
     </main>
   )
 
   if (alreadyNominated) return (
     <main className="p-6 max-w-lg mx-auto">
-      <p className="text-green-700 font-medium">You have already submitted a nomination for this election.</p>
-      <Link href={`/elections/${electionId}/candidates`} className="text-blue-600 underline text-sm">← View candidates</Link>
+      <p className="text-green-500 font-bold uppercase tracking-widest text-sm mb-4">You have already submitted a nomination for this election.</p>
+      <Link href={`/elections/${electionId}/candidates`} className="text-sm font-bold uppercase tracking-widest text-gray-400 border-b border-transparent hover:border-white hover:text-white pb-1 transition-colors">← View candidates</Link>
     </main>
   )
 
   if (success) return (
     <main className="p-6 max-w-lg mx-auto">
-      <p className="text-green-700 font-medium">Nomination submitted! It is pending admin approval.</p>
-      <Link href={`/elections/${electionId}/candidates`} className="text-blue-600 underline text-sm mt-2 inline-block">← View candidates</Link>
+      <p className="text-green-500 font-bold uppercase tracking-widest text-sm mb-4">Nomination submitted! It is pending admin approval.</p>
+      <Link href={`/elections/${electionId}/candidates`} className="text-sm font-bold uppercase tracking-widest text-gray-400 border-b border-transparent hover:border-white hover:text-white pb-1 transition-colors mt-2 inline-block">← View candidates</Link>
     </main>
   )
 
   return (
     <main className="max-w-lg mx-auto p-6">
-      <Link href={`/elections/${electionId}/candidates`} className="text-sm text-blue-600 underline mb-4 inline-block">← Candidates</Link>
-      <h1 className="text-xl font-bold mb-4">Self-Nominate: {election.title}</h1>
-      <form onSubmit={submit} className="flex flex-col gap-4">
+      <Link href={`/elections/${electionId}/candidates`} className="text-sm font-bold uppercase tracking-widest text-gray-400 border-b border-transparent hover:border-white hover:text-white pb-1 transition-colors mb-8 inline-block">← Candidates</Link>
+      <h1 className="text-2xl font-extrabold uppercase tracking-widest mb-8">Self-Nominate: {election.title}</h1>
+      <form onSubmit={submit} className="flex flex-col gap-8">
         <div>
-          <label htmlFor="manifesto" className="block text-sm font-medium mb-1">Manifesto</label>
+          <label htmlFor="manifesto" className="block text-xs font-bold uppercase tracking-widest text-gray-400 mb-2">Manifesto</label>
           <textarea
             id="manifesto"
             value={manifesto}
             onChange={e => setManifesto(e.target.value)}
             rows={5}
-            className="w-full border rounded px-3 py-2 text-sm"
+            className="w-full bg-transparent border border-gray-800 focus:border-white px-4 py-3 text-sm outline-none transition-colors"
             placeholder="Tell voters why you're running…"
           />
         </div>
         <div>
-          <label htmlFor="photo" className="block text-sm font-medium mb-1">
-            Photo <span className="text-gray-400 font-normal">(optional, JPEG/PNG/WebP, max 2 MB)</span>
+          <label htmlFor="photo" className="block text-xs font-bold uppercase tracking-widest text-gray-400 mb-2">
+            Photo <span className="text-gray-600">(optional, JPEG/PNG/WebP, max 2 MB)</span>
           </label>
-          <input id="photo" type="file" accept="image/jpeg,image/png,image/webp" onChange={handlePhotoChange} />
-          {photoError && <p className="text-red-600 text-sm mt-1">{photoError}</p>}
+          <input id="photo" type="file" accept="image/jpeg,image/png,image/webp" onChange={handlePhotoChange} className="text-sm file:mr-4 file:py-2 file:px-4 file:border-0 file:bg-gray-800 file:text-white file:font-bold file:uppercase file:tracking-widest hover:file:bg-gray-700 transition-colors" />
+          {photoError && <p className="text-red-500 text-sm mt-2">{photoError}</p>}
         </div>
-        {error && <p className="text-red-600 text-sm">{error}</p>}
+        {error && <p className="text-red-500 text-sm font-bold uppercase tracking-wide">{error}</p>}
         <button
           type="submit"
           disabled={loading}
-          className="bg-yellow-600 text-white rounded px-4 py-2 text-sm disabled:opacity-50"
+          className="bg-yellow-500 text-black font-bold uppercase tracking-widest py-4 hover:bg-yellow-400 transition-colors disabled:opacity-50"
         >
           {loading ? 'Submitting…' : 'Submit Nomination'}
         </button>

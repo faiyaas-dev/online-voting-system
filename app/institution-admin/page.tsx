@@ -1,6 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
-import SignOutButton from '@/components/SignOutButton'
 import RosterUploadForm from '@/components/admin/RosterUploadForm'
 import InviteDeptAdminForm from '@/components/admin/InviteDeptAdminForm'
 import CreateElectionForm from '@/components/admin/CreateElectionForm'
@@ -39,7 +38,6 @@ export default async function InstitutionAdminPage() {
       <div className="max-w-6xl mx-auto space-y-12">
         <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6 border-b border-gray-800 pb-6">
           <h1 className="text-4xl font-extrabold uppercase tracking-widest">Institution Admin</h1>
-          <SignOutButton />
         </header>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">

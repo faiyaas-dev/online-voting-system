@@ -2,7 +2,6 @@ import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import type { Election, Profile } from '@/lib/supabase/types'
-import SignOutButton from '@/components/SignOutButton'
 
 function statusBadge(status: Election['status']) {
   const map: Record<string, string> = {
@@ -38,7 +37,6 @@ export default async function ElectionsPage() {
       <div className="max-w-4xl mx-auto space-y-12">
         <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6 border-b border-gray-800 pb-6">
           <h1 className="text-4xl font-extrabold uppercase tracking-widest">Elections</h1>
-          <SignOutButton />
         </header>
 
         {(!elections || elections.length === 0) ? (
