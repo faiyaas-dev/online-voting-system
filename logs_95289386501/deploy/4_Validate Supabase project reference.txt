@@ -1,0 +1,27 @@
+﻿2026-09-17T10:45:46.9185960Z ##[debug]Evaluating: secrets.SUPABASE_PROJECT_ID
+2026-09-17T10:45:46.9186330Z ##[debug]Evaluating Index:
+2026-09-17T10:45:46.9186606Z ##[debug]..Evaluating secrets:
+2026-09-17T10:45:46.9186997Z ##[debug]..=> Object
+2026-09-17T10:45:46.9187259Z ##[debug]..Evaluating String:
+2026-09-17T10:45:46.9187545Z ##[debug]..=> 'SUPABASE_PROJECT_ID'
+2026-09-17T10:45:46.9188209Z ##[debug]=> '***'
+2026-09-17T10:45:46.9188471Z ##[debug]Result: '***'
+2026-09-17T10:45:46.9195064Z ##[debug]Evaluating condition for step: 'Validate Supabase project reference'
+2026-09-17T10:45:46.9197349Z ##[debug]Evaluating: success()
+2026-09-17T10:45:46.9197781Z ##[debug]Evaluating success:
+2026-09-17T10:45:46.9198242Z ##[debug]=> true
+2026-09-17T10:45:46.9198660Z ##[debug]Result: true
+2026-09-17T10:45:46.9199313Z ##[debug]Starting: Validate Supabase project reference
+2026-09-17T10:45:46.9209839Z ##[debug]Loading inputs
+2026-09-17T10:45:46.9211154Z ##[debug]Loading env
+2026-09-17T10:45:46.9217002Z ##[group]Run if [[ ! "$SUPABASE_PROJECT_ID" =~ ^[a-z0-9]{20}$ ]]; then
+2026-09-17T10:45:46.9217623Z [36;1mif [[ ! "$SUPABASE_PROJECT_ID" =~ ^[a-z0-9]{20}$ ]]; then[0m
+2026-09-17T10:45:46.9218027Z [36;1m  echo "::error::SUPABASE_PROJECT_ID must be exactly 20 lowercase letters and digits."[0m
+2026-09-17T10:45:46.9218442Z [36;1m  exit 1[0m
+2026-09-17T10:45:46.9218663Z [36;1mfi[0m
+2026-09-17T10:45:46.9241008Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+2026-09-17T10:45:46.9241442Z env:
+2026-09-17T10:45:46.9241825Z   SUPABASE_PROJECT_ID: ***
+2026-09-17T10:45:46.9242157Z ##[endgroup]
+2026-09-17T10:45:46.9263404Z ##[debug]/usr/bin/bash --noprofile --norc -e -o pipefail /home/runner/work/_temp/9e1f75fc-8c56-41f6-9dc0-4b31c760351a.sh
+2026-09-17T10:45:46.9285595Z ##[debug]Finishing: Validate Supabase project reference

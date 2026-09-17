@@ -1,0 +1,15 @@
+﻿2026-09-17T10:45:40.7504523Z ##[debug]Evaluating condition for step: 'Setup Supabase CLI'
+2026-09-17T10:45:40.7510305Z ##[debug]Evaluating: success()
+2026-09-17T10:45:40.7511829Z ##[debug]Evaluating success:
+2026-09-17T10:45:40.7513571Z ##[debug]=> true
+2026-09-17T10:45:40.7514927Z ##[debug]Result: true
+2026-09-17T10:45:40.7516744Z ##[debug]Starting: Setup Supabase CLI
+2026-09-17T10:45:40.7536684Z ##[debug]Loading inputs
+2026-09-17T10:45:40.7549132Z ##[debug]Loading env
+2026-09-17T10:45:40.7570117Z ##[group]Run npx --yes supabase@2.117.0 --version
+2026-09-17T10:45:40.7571462Z [36;1mnpx --yes supabase@2.117.0 --version[0m
+2026-09-17T10:45:40.7597428Z shell: /usr/bin/bash -e {0}
+2026-09-17T10:45:40.7598335Z ##[endgroup]
+2026-09-17T10:45:40.7642467Z ##[debug]/usr/bin/bash -e /home/runner/work/_temp/075c5948-749a-4888-8bb0-567ba09dc624.sh
+2026-09-17T10:45:46.7715145Z 2.117.0
+2026-09-17T10:45:46.9174157Z ##[debug]Finishing: Setup Supabase CLI

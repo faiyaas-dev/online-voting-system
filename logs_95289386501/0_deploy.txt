@@ -1,0 +1,469 @@
+﻿2026-09-17T10:45:38.8877979Z ##[debug]Starting: deploy
+2026-09-17T10:45:38.8894724Z ##[debug]Cleaning runner temp folder: /home/runner/work/_temp
+2026-09-17T10:45:38.9009031Z ##[debug]Starting: Set up job
+2026-09-17T10:45:38.9009691Z Current runner version: '2.337.0'
+2026-09-17T10:45:38.9026496Z ##[group]Runner Image Provisioner
+2026-09-17T10:45:38.9027155Z Hosted Compute Agent
+2026-09-17T10:45:38.9027595Z Version: 20260828.587
+2026-09-17T10:45:38.9028097Z Commit: abac92662cab4cc7352de4f9f9d2e2419aad9c29
+2026-09-17T10:45:38.9028617Z Build Date: 2026-08-28T16:44:25Z
+2026-09-17T10:45:38.9029134Z Worker ID: {2d0fe817-97b5-4ff4-8168-49f004bed817}
+2026-09-17T10:45:38.9029655Z Azure Region: centralus
+2026-09-17T10:45:38.9030065Z ##[endgroup]
+2026-09-17T10:45:38.9031468Z ##[group]Operating System
+2026-09-17T10:45:38.9031943Z Ubuntu
+2026-09-17T10:45:38.9032521Z 24.04.5
+2026-09-17T10:45:38.9032900Z LTS
+2026-09-17T10:45:38.9033283Z ##[endgroup]
+2026-09-17T10:45:38.9033725Z ##[group]Runner Image
+2026-09-17T10:45:38.9034157Z Image: ubuntu-24.04
+2026-09-17T10:45:38.9034753Z Version: 20260907.300.1
+2026-09-17T10:45:38.9035561Z Included Software: https://github.com/actions/runner-images/blob/ubuntu24/20260907.300/images/ubuntu/Ubuntu2404-Readme.md
+2026-09-17T10:45:38.9036613Z Image Release: https://github.com/actions/runner-images/releases/tag/ubuntu24%2F20260907.300
+2026-09-17T10:45:38.9037275Z ##[endgroup]
+2026-09-17T10:45:38.9038128Z ##[group]GITHUB_TOKEN Permissions
+2026-09-17T10:45:38.9039736Z Contents: read
+2026-09-17T10:45:38.9040172Z Metadata: read
+2026-09-17T10:45:38.9040562Z Packages: read
+2026-09-17T10:45:38.9040933Z ##[endgroup]
+2026-09-17T10:45:38.9042933Z Secret source: Actions
+2026-09-17T10:45:38.9043652Z Cache mode: write
+2026-09-17T10:45:38.9044209Z ##[debug]Primary repository: faiyaas-dev/online-voting-system
+2026-09-17T10:45:38.9044780Z Prepare workflow directory
+2026-09-17T10:45:38.9097070Z ##[debug]Creating pipeline directory: '/home/runner/work/online-voting-system'
+2026-09-17T10:45:38.9099583Z ##[debug]Creating workspace directory: '/home/runner/work/online-voting-system/online-voting-system'
+2026-09-17T10:45:38.9100675Z ##[debug]Update context data
+2026-09-17T10:45:38.9103337Z ##[debug]Evaluating job-level environment variables
+2026-09-17T10:45:38.9266476Z ##[debug]Evaluating job container
+2026-09-17T10:45:38.9268893Z ##[debug]Evaluating job service containers
+2026-09-17T10:45:38.9270481Z ##[debug]Evaluating job defaults
+2026-09-17T10:45:38.9292513Z Prepare all required actions
+2026-09-17T10:45:38.9329049Z Getting action download info
+2026-09-17T10:45:39.1713231Z Download action repository 'actions/checkout@v4' (SHA:11d5960a326750d5838078e36cf38b85af677262)
+2026-09-17T10:45:39.1738948Z ##[debug]Copied action archive '/opt/actionarchivecache/actions_checkout/11d5960a326750d5838078e36cf38b85af677262.tar.gz' to '/home/runner/work/_actions/_temp_4c265c53-b80b-4293-bb11-4a4555f8fac0/2668e8b4-1135-4b9f-a2c1-b71c01b65f20.tar.gz'
+2026-09-17T10:45:39.2624347Z ##[debug]Unwrap 'actions-checkout-11d5960' to '/home/runner/work/_actions/actions/checkout/v4'
+2026-09-17T10:45:39.3489673Z ##[debug]Archive '/home/runner/work/_actions/_temp_4c265c53-b80b-4293-bb11-4a4555f8fac0/2668e8b4-1135-4b9f-a2c1-b71c01b65f20.tar.gz' has been unzipped into '/home/runner/work/_actions/actions/checkout/v4'.
+2026-09-17T10:45:39.3567189Z ##[debug]action.yml for action: '/home/runner/work/_actions/actions/checkout/v4/action.yml'.
+2026-09-17T10:45:39.4171786Z ##[debug]Set step '__actions_checkout' display name to: 'Checkout code'
+2026-09-17T10:45:39.4175395Z ##[debug]Set step '__run' display name to: 'Setup Supabase CLI'
+2026-09-17T10:45:39.4177317Z ##[debug]Set step '__run_2' display name to: 'Validate Supabase project reference'
+2026-09-17T10:45:39.4179326Z ##[debug]Set step '__run_3' display name to: 'Link to Supabase Project'
+2026-09-17T10:45:39.4181201Z ##[debug]Set step '__run_4' display name to: 'Verify migration state'
+2026-09-17T10:45:39.4183155Z ##[debug]Set step '__run_5' display name to: 'Push Migrations'
+2026-09-17T10:45:39.4183753Z Complete job name: deploy
+2026-09-17T10:45:39.4210046Z ##[debug]Collect running processes for tracking orphan processes.
+2026-09-17T10:45:39.4354940Z ##[debug]Finishing: Set up job
+2026-09-17T10:45:39.4463228Z ##[debug]Evaluating condition for step: 'Checkout code'
+2026-09-17T10:45:39.4487916Z ##[debug]Evaluating: success()
+2026-09-17T10:45:39.4490979Z ##[debug]Evaluating success:
+2026-09-17T10:45:39.4501631Z ##[debug]=> true
+2026-09-17T10:45:39.4506024Z ##[debug]Result: true
+2026-09-17T10:45:39.4527804Z ##[debug]Starting: Checkout code
+2026-09-17T10:45:39.4592244Z ##[debug]Register post job cleanup for action: actions/checkout@v4
+2026-09-17T10:45:39.4661662Z ##[debug]Loading inputs
+2026-09-17T10:45:39.4670950Z ##[debug]Evaluating: github.repository
+2026-09-17T10:45:39.4671750Z ##[debug]Evaluating Index:
+2026-09-17T10:45:39.4673615Z ##[debug]..Evaluating github:
+2026-09-17T10:45:39.4674399Z ##[debug]..=> Object
+2026-09-17T10:45:39.4678226Z ##[debug]..Evaluating String:
+2026-09-17T10:45:39.4678998Z ##[debug]..=> 'repository'
+2026-09-17T10:45:39.4682308Z ##[debug]=> 'faiyaas-dev/online-voting-system'
+2026-09-17T10:45:39.4683600Z ##[debug]Result: 'faiyaas-dev/online-voting-system'
+2026-09-17T10:45:39.4687294Z ##[debug]Evaluating: github.token
+2026-09-17T10:45:39.4687760Z ##[debug]Evaluating Index:
+2026-09-17T10:45:39.4688217Z ##[debug]..Evaluating github:
+2026-09-17T10:45:39.4688677Z ##[debug]..=> Object
+2026-09-17T10:45:39.4689106Z ##[debug]..Evaluating String:
+2026-09-17T10:45:39.4689527Z ##[debug]..=> 'token'
+2026-09-17T10:45:39.4692747Z ##[debug]=> '***'
+2026-09-17T10:45:39.4695425Z ##[debug]Result: '***'
+2026-09-17T10:45:39.4713059Z ##[debug]Loading env
+2026-09-17T10:45:39.4757547Z Node 20 is being deprecated. This workflow is running with Node 24 by default. If you need to temporarily use Node 20, you can set the ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION=true environment variable. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
+2026-09-17T10:45:39.4764542Z ##[group]Run actions/checkout@v4
+2026-09-17T10:45:39.4765185Z with:
+2026-09-17T10:45:39.4765635Z   repository: faiyaas-dev/online-voting-system
+2026-09-17T10:45:39.4768457Z   token: ***
+2026-09-17T10:45:39.4768856Z   ssh-strict: true
+2026-09-17T10:45:39.4769229Z   ssh-user: git
+2026-09-17T10:45:39.4769620Z   persist-credentials: true
+2026-09-17T10:45:39.4770045Z   clean: true
+2026-09-17T10:45:39.4770422Z   sparse-checkout-cone-mode: true
+2026-09-17T10:45:39.4770873Z   fetch-depth: 1
+2026-09-17T10:45:39.4771245Z   fetch-tags: false
+2026-09-17T10:45:39.4771637Z   show-progress: true
+2026-09-17T10:45:39.4772001Z   lfs: false
+2026-09-17T10:45:39.4772537Z   submodules: false
+2026-09-17T10:45:39.4772958Z   set-safe-directory: true
+2026-09-17T10:45:39.4773361Z   allow-unsafe-pr-checkout: false
+2026-09-17T10:45:39.4773926Z ##[endgroup]
+2026-09-17T10:45:39.5501906Z ##[debug]GITHUB_WORKSPACE = '/home/runner/work/online-voting-system/online-voting-system'
+2026-09-17T10:45:39.5504269Z ##[debug]qualified repository = 'faiyaas-dev/online-voting-system'
+2026-09-17T10:45:39.5505484Z ##[debug]ref = 'refs/heads/main'
+2026-09-17T10:45:39.5506514Z ##[debug]commit = 'acc92168b6bea05089673b6470de6c4d4e8aa4df'
+2026-09-17T10:45:39.5507544Z ##[debug]clean = true
+2026-09-17T10:45:39.5508321Z ##[debug]filter = undefined
+2026-09-17T10:45:39.5509172Z ##[debug]fetch depth = 1
+2026-09-17T10:45:39.5510012Z ##[debug]fetch tags = false
+2026-09-17T10:45:39.5510831Z ##[debug]show progress = true
+2026-09-17T10:45:39.5511658Z ##[debug]lfs = false
+2026-09-17T10:45:39.5512592Z ##[debug]submodules = false
+2026-09-17T10:45:39.5513828Z ##[debug]recursive submodules = false
+2026-09-17T10:45:39.5514697Z ##[debug]GitHub Host URL = 
+2026-09-17T10:45:39.5515645Z ##[debug]allow unsafe PR checkout = false
+2026-09-17T10:45:39.5517213Z ::add-matcher::/home/runner/work/_actions/actions/checkout/v4/dist/problem-matcher.json
+2026-09-17T10:45:39.5599868Z ##[debug]Added matchers: 'checkout-git'. Problem matchers scan action output for known warning or error strings and report these inline.
+2026-09-17T10:45:39.5606904Z Syncing repository: faiyaas-dev/online-voting-system
+2026-09-17T10:45:39.5608575Z ::group::Getting Git version info
+2026-09-17T10:45:39.5610252Z ##[group]Getting Git version info
+2026-09-17T10:45:39.5611260Z Working directory is '/home/runner/work/online-voting-system/online-voting-system'
+2026-09-17T10:45:39.5612839Z ##[debug]Getting git version
+2026-09-17T10:45:39.5613512Z [command]/usr/bin/git version
+2026-09-17T10:45:39.5919296Z git version 2.55.0
+2026-09-17T10:45:39.5945339Z ##[debug]0
+2026-09-17T10:45:39.5946559Z ##[debug]git version 2.55.0
+2026-09-17T10:45:39.5947208Z ##[debug]
+2026-09-17T10:45:39.5948546Z ##[debug]Set git useragent to: git/2.55.0 (github-actions-checkout)
+2026-09-17T10:45:39.5950242Z ::endgroup::
+2026-09-17T10:45:39.5950863Z ##[endgroup]
+2026-09-17T10:45:39.5957206Z ::add-mask::***
+2026-09-17T10:45:39.5960502Z Temporarily overriding HOME='/home/runner/work/_temp/d4ef5035-e1e9-4705-a7df-e8243d1d9f90' before making global git config changes
+2026-09-17T10:45:39.5961996Z Adding repository directory to the temporary git global config as a safe directory
+2026-09-17T10:45:39.5963563Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/online-voting-system/online-voting-system
+2026-09-17T10:45:39.5990991Z ##[debug]0
+2026-09-17T10:45:39.5991918Z ##[debug]
+2026-09-17T10:45:39.5996804Z Deleting the contents of '/home/runner/work/online-voting-system/online-voting-system'
+2026-09-17T10:45:39.6001159Z ::group::Initializing the repository
+2026-09-17T10:45:39.6001868Z ##[group]Initializing the repository
+2026-09-17T10:45:39.6005579Z [command]/usr/bin/git init /home/runner/work/online-voting-system/online-voting-system
+2026-09-17T10:45:39.8872528Z hint: Using 'master' as the name for the initial branch. This default branch name
+2026-09-17T10:45:39.8873501Z hint: will change to "main" in Git 3.0. To configure the initial branch name
+2026-09-17T10:45:39.8874394Z hint: to use in all of your new repositories, which will suppress this warning,
+2026-09-17T10:45:39.8875121Z hint: call:
+2026-09-17T10:45:39.8875553Z hint:
+2026-09-17T10:45:39.8876051Z hint: 	git config --global init.defaultBranch <name>
+2026-09-17T10:45:39.8876651Z hint:
+2026-09-17T10:45:39.8877265Z hint: Names commonly chosen instead of 'master' are 'main', 'trunk' and
+2026-09-17T10:45:39.8878057Z hint: 'development'. The just-created branch can be renamed via this command:
+2026-09-17T10:45:39.8878751Z hint:
+2026-09-17T10:45:39.8879169Z hint: 	git branch -m <name>
+2026-09-17T10:45:39.8879612Z hint:
+2026-09-17T10:45:39.8880192Z hint: Disable this message with "git config set advice.defaultBranchName false"
+2026-09-17T10:45:39.9585862Z Initialized empty Git repository in /home/runner/work/online-voting-system/online-voting-system/.git/
+2026-09-17T10:45:39.9590405Z ##[debug]0
+2026-09-17T10:45:39.9591667Z ##[debug]Initialized empty Git repository in /home/runner/work/online-voting-system/online-voting-system/.git/
+2026-09-17T10:45:39.9592667Z ##[debug]
+2026-09-17T10:45:39.9596798Z [command]/usr/bin/git remote add origin https://github.com/faiyaas-dev/online-voting-system
+2026-09-17T10:45:39.9636659Z ##[debug]0
+2026-09-17T10:45:39.9637824Z ##[debug]
+2026-09-17T10:45:39.9639012Z ::endgroup::
+2026-09-17T10:45:39.9639594Z ##[endgroup]
+2026-09-17T10:45:39.9640822Z ::group::Disabling automatic garbage collection
+2026-09-17T10:45:39.9641749Z ##[group]Disabling automatic garbage collection
+2026-09-17T10:45:39.9642854Z [command]/usr/bin/git config --local gc.auto 0
+2026-09-17T10:45:39.9665796Z ##[debug]0
+2026-09-17T10:45:39.9666969Z ##[debug]
+2026-09-17T10:45:39.9667947Z ::endgroup::
+2026-09-17T10:45:39.9668606Z ##[endgroup]
+2026-09-17T10:45:39.9669678Z ::group::Setting up auth
+2026-09-17T10:45:39.9670386Z ##[group]Setting up auth
+2026-09-17T10:45:39.9673048Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-09-17T10:45:39.9693130Z ##[debug]1
+2026-09-17T10:45:39.9694203Z ##[debug]
+2026-09-17T10:45:39.9697811Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-09-17T10:45:40.0022710Z ##[debug]0
+2026-09-17T10:45:40.0024051Z ##[debug]
+2026-09-17T10:45:40.0029109Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-09-17T10:45:40.0049227Z ##[debug]1
+2026-09-17T10:45:40.0050166Z ##[debug]
+2026-09-17T10:45:40.0054304Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-09-17T10:45:40.0195716Z ##[debug]0
+2026-09-17T10:45:40.0196736Z ##[debug]
+2026-09-17T10:45:40.0201651Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-09-17T10:45:40.0221073Z ##[debug]1
+2026-09-17T10:45:40.0222801Z ##[debug]
+2026-09-17T10:45:40.0226315Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-09-17T10:45:40.0366809Z ##[debug]0
+2026-09-17T10:45:40.0367822Z ##[debug]
+2026-09-17T10:45:40.0374481Z [command]/usr/bin/git config --local http.https://github.com/.extraheader AUTHORIZATION: basic ***
+2026-09-17T10:45:40.0393487Z ##[debug]0
+2026-09-17T10:45:40.0394283Z ##[debug]
+2026-09-17T10:45:40.1185753Z ::endgroup::
+2026-09-17T10:45:40.1186318Z ##[endgroup]
+2026-09-17T10:45:40.1187208Z ::group::Fetching the repository
+2026-09-17T10:45:40.1187786Z ##[group]Fetching the repository
+2026-09-17T10:45:40.1194369Z [command]/usr/bin/git -c protocol.version=2 fetch --no-tags --prune --no-recurse-submodules --depth=1 origin +acc92168b6bea05089673b6470de6c4d4e8aa4df:refs/remotes/origin/main
+2026-09-17T10:45:40.7071996Z From https://github.com/faiyaas-dev/online-voting-system
+2026-09-17T10:45:40.7074048Z  * [new ref]         acc92168b6bea05089673b6470de6c4d4e8aa4df -> origin/main
+2026-09-17T10:45:40.7076280Z ##[debug]0
+2026-09-17T10:45:40.7077569Z ##[debug]
+2026-09-17T10:45:40.7081337Z ::endgroup::
+2026-09-17T10:45:40.7082367Z ##[endgroup]
+2026-09-17T10:45:40.7084185Z ::group::Determining the checkout info
+2026-09-17T10:45:40.7085071Z ##[group]Determining the checkout info
+2026-09-17T10:45:40.7086398Z ::endgroup::
+2026-09-17T10:45:40.7087085Z ##[endgroup]
+2026-09-17T10:45:40.7088160Z [command]/usr/bin/git sparse-checkout disable
+2026-09-17T10:45:40.7118902Z ##[debug]0
+2026-09-17T10:45:40.7120720Z ##[debug]
+2026-09-17T10:45:40.7123741Z [command]/usr/bin/git config --local --unset-all extensions.worktreeConfig
+2026-09-17T10:45:40.7146086Z ##[debug]0
+2026-09-17T10:45:40.7148092Z ##[debug]
+2026-09-17T10:45:40.7150132Z ::group::Checking out the ref
+2026-09-17T10:45:40.7151733Z ##[group]Checking out the ref
+2026-09-17T10:45:40.7187138Z [command]/usr/bin/git checkout --progress --force -B main refs/remotes/origin/main
+2026-09-17T10:45:40.7293207Z Switched to a new branch 'main'
+2026-09-17T10:45:40.7295941Z branch 'main' set up to track 'origin/main'.
+2026-09-17T10:45:40.7300151Z ##[debug]0
+2026-09-17T10:45:40.7301920Z ##[debug]branch 'main' set up to track 'origin/main'.
+2026-09-17T10:45:40.7303568Z ##[debug]
+2026-09-17T10:45:40.7305112Z ::endgroup::
+2026-09-17T10:45:40.7306099Z ##[endgroup]
+2026-09-17T10:45:40.7327015Z ##[debug]0
+2026-09-17T10:45:40.7329100Z ##[debug]commit acc92168b6bea05089673b6470de6c4d4e8aa4df
+2026-09-17T10:45:40.7330570Z ##[debug]Author: faiyaas-dev <faiyaas.automates@gmail.com>
+2026-09-17T10:45:40.7331912Z ##[debug]Date:   Thu Sep 17 10:59:45 2026 +0530
+2026-09-17T10:45:40.7333637Z ##[debug]
+2026-09-17T10:45:40.7334737Z ##[debug]    ci: validate Supabase project reference
+2026-09-17T10:45:40.7335910Z ##[debug]    
+2026-09-17T10:45:40.7337145Z ##[debug]    Co-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>
+2026-09-17T10:45:40.7338541Z ##[debug]
+2026-09-17T10:45:40.7339513Z [command]/usr/bin/git log -1 --format=%H
+2026-09-17T10:45:40.7346195Z acc92168b6bea05089673b6470de6c4d4e8aa4df
+2026-09-17T10:45:40.7348000Z ##[debug]0
+2026-09-17T10:45:40.7349697Z ##[debug]acc92168b6bea05089673b6470de6c4d4e8aa4df
+2026-09-17T10:45:40.7350813Z ##[debug]
+2026-09-17T10:45:40.7352994Z ##[debug]Unsetting HOME override
+2026-09-17T10:45:40.7361968Z ::remove-matcher owner=checkout-git::
+2026-09-17T10:45:40.7377735Z ##[debug]Removed matchers: 'checkout-git'
+2026-09-17T10:45:40.7420698Z ##[debug]Node Action run completed with exit code 0
+2026-09-17T10:45:40.7451513Z ##[debug]Save intra-action state isPost = true
+2026-09-17T10:45:40.7453602Z ##[debug]Save intra-action state setSafeDirectory = true
+2026-09-17T10:45:40.7455713Z ##[debug]Save intra-action state repositoryPath = /home/runner/work/online-voting-system/online-voting-system
+2026-09-17T10:45:40.7460939Z ##[debug]Set output commit = acc92168b6bea05089673b6470de6c4d4e8aa4df
+2026-09-17T10:45:40.7462830Z ##[debug]Set output ref = refs/heads/main
+2026-09-17T10:45:40.7477983Z ##[debug]Finishing: Checkout code
+2026-09-17T10:45:40.7504594Z ##[debug]Evaluating condition for step: 'Setup Supabase CLI'
+2026-09-17T10:45:40.7510310Z ##[debug]Evaluating: success()
+2026-09-17T10:45:40.7511836Z ##[debug]Evaluating success:
+2026-09-17T10:45:40.7513579Z ##[debug]=> true
+2026-09-17T10:45:40.7514930Z ##[debug]Result: true
+2026-09-17T10:45:40.7516748Z ##[debug]Starting: Setup Supabase CLI
+2026-09-17T10:45:40.7536699Z ##[debug]Loading inputs
+2026-09-17T10:45:40.7549160Z ##[debug]Loading env
+2026-09-17T10:45:40.7570220Z ##[group]Run npx --yes supabase@2.117.0 --version
+2026-09-17T10:45:40.7571468Z [36;1mnpx --yes supabase@2.117.0 --version[0m
+2026-09-17T10:45:40.7597442Z shell: /usr/bin/bash -e {0}
+2026-09-17T10:45:40.7598341Z ##[endgroup]
+2026-09-17T10:45:40.7642485Z ##[debug]/usr/bin/bash -e /home/runner/work/_temp/075c5948-749a-4888-8bb0-567ba09dc624.sh
+2026-09-17T10:45:46.7715205Z 2.117.0
+2026-09-17T10:45:46.9174180Z ##[debug]Finishing: Setup Supabase CLI
+2026-09-17T10:45:46.9185975Z ##[debug]Evaluating: secrets.SUPABASE_PROJECT_ID
+2026-09-17T10:45:46.9186332Z ##[debug]Evaluating Index:
+2026-09-17T10:45:46.9186607Z ##[debug]..Evaluating secrets:
+2026-09-17T10:45:46.9186999Z ##[debug]..=> Object
+2026-09-17T10:45:46.9187262Z ##[debug]..Evaluating String:
+2026-09-17T10:45:46.9187547Z ##[debug]..=> 'SUPABASE_PROJECT_ID'
+2026-09-17T10:45:46.9188212Z ##[debug]=> '***'
+2026-09-17T10:45:46.9188473Z ##[debug]Result: '***'
+2026-09-17T10:45:46.9195077Z ##[debug]Evaluating condition for step: 'Validate Supabase project reference'
+2026-09-17T10:45:46.9197352Z ##[debug]Evaluating: success()
+2026-09-17T10:45:46.9197783Z ##[debug]Evaluating success:
+2026-09-17T10:45:46.9198244Z ##[debug]=> true
+2026-09-17T10:45:46.9198662Z ##[debug]Result: true
+2026-09-17T10:45:46.9199316Z ##[debug]Starting: Validate Supabase project reference
+2026-09-17T10:45:46.9209851Z ##[debug]Loading inputs
+2026-09-17T10:45:46.9211156Z ##[debug]Loading env
+2026-09-17T10:45:46.9217160Z ##[group]Run if [[ ! "$SUPABASE_PROJECT_ID" =~ ^[a-z0-9]{20}$ ]]; then
+2026-09-17T10:45:46.9217625Z [36;1mif [[ ! "$SUPABASE_PROJECT_ID" =~ ^[a-z0-9]{20}$ ]]; then[0m
+2026-09-17T10:45:46.9218029Z [36;1m  echo "::error::SUPABASE_PROJECT_ID must be exactly 20 lowercase letters and digits."[0m
+2026-09-17T10:45:46.9218444Z [36;1m  exit 1[0m
+2026-09-17T10:45:46.9218665Z [36;1mfi[0m
+2026-09-17T10:45:46.9241020Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+2026-09-17T10:45:46.9241444Z env:
+2026-09-17T10:45:46.9241827Z   SUPABASE_PROJECT_ID: ***
+2026-09-17T10:45:46.9242163Z ##[endgroup]
+2026-09-17T10:45:46.9263413Z ##[debug]/usr/bin/bash --noprofile --norc -e -o pipefail /home/runner/work/_temp/9e1f75fc-8c56-41f6-9dc0-4b31c760351a.sh
+2026-09-17T10:45:46.9285604Z ##[debug]Finishing: Validate Supabase project reference
+2026-09-17T10:45:46.9292605Z ##[debug]Evaluating: secrets.SUPABASE_ACCESS_TOKEN
+2026-09-17T10:45:46.9293040Z ##[debug]Evaluating Index:
+2026-09-17T10:45:46.9293390Z ##[debug]..Evaluating secrets:
+2026-09-17T10:45:46.9293687Z ##[debug]..=> Object
+2026-09-17T10:45:46.9294017Z ##[debug]..Evaluating String:
+2026-09-17T10:45:46.9294280Z ##[debug]..=> 'SUPABASE_ACCESS_TOKEN'
+2026-09-17T10:45:46.9294882Z ##[debug]=> '***'
+2026-09-17T10:45:46.9295237Z ##[debug]Result: '***'
+2026-09-17T10:45:46.9296003Z ##[debug]Evaluating: secrets.SUPABASE_DB_PASSWORD
+2026-09-17T10:45:46.9296317Z ##[debug]Evaluating Index:
+2026-09-17T10:45:46.9296612Z ##[debug]..Evaluating secrets:
+2026-09-17T10:45:46.9296872Z ##[debug]..=> Object
+2026-09-17T10:45:46.9297098Z ##[debug]..Evaluating String:
+2026-09-17T10:45:46.9297406Z ##[debug]..=> 'SUPABASE_DB_PASSWORD'
+2026-09-17T10:45:46.9297706Z ##[debug]=> '***'
+2026-09-17T10:45:46.9297975Z ##[debug]Result: '***'
+2026-09-17T10:45:46.9298592Z ##[debug]Evaluating condition for step: 'Link to Supabase Project'
+2026-09-17T10:45:46.9299802Z ##[debug]Evaluating: success()
+2026-09-17T10:45:46.9300178Z ##[debug]Evaluating success:
+2026-09-17T10:45:46.9300566Z ##[debug]=> true
+2026-09-17T10:45:46.9300969Z ##[debug]Result: true
+2026-09-17T10:45:46.9301476Z ##[debug]Starting: Link to Supabase Project
+2026-09-17T10:45:46.9310488Z ##[debug]Loading inputs
+2026-09-17T10:45:46.9316766Z ##[debug]Evaluating: format('npx --yes supabase@2.117.0 link --project-ref {0}', secrets.SUPABASE_PROJECT_ID)
+2026-09-17T10:45:46.9317277Z ##[debug]Evaluating format:
+2026-09-17T10:45:46.9320167Z ##[debug]..Evaluating String:
+2026-09-17T10:45:46.9320536Z ##[debug]..=> 'npx --yes supabase@2.117.0 link --project-ref {0}'
+2026-09-17T10:45:46.9329126Z ##[debug]..Evaluating Index:
+2026-09-17T10:45:46.9329481Z ##[debug]....Evaluating secrets:
+2026-09-17T10:45:46.9329824Z ##[debug]....=> Object
+2026-09-17T10:45:46.9330080Z ##[debug]....Evaluating String:
+2026-09-17T10:45:46.9330386Z ##[debug]....=> 'SUPABASE_PROJECT_ID'
+2026-09-17T10:45:46.9330794Z ##[debug]..=> '***'
+2026-09-17T10:45:46.9331554Z ##[debug]=> 'npx --yes supabase@2.117.0 link --project-ref ***'
+2026-09-17T10:45:46.9332001Z ##[debug]Result: 'npx --yes supabase@2.117.0 link --project-ref ***'
+2026-09-17T10:45:46.9332905Z ##[debug]Loading env
+2026-09-17T10:45:46.9336694Z ##[group]Run npx --yes supabase@2.117.0 link --project-ref ***
+2026-09-17T10:45:46.9337091Z [36;1mnpx --yes supabase@2.117.0 link --project-ref ***[0m
+2026-09-17T10:45:46.9352527Z shell: /usr/bin/bash -e {0}
+2026-09-17T10:45:46.9352793Z env:
+2026-09-17T10:45:46.9353156Z   SUPABASE_ACCESS_TOKEN: ***
+2026-09-17T10:45:46.9353495Z   SUPABASE_DB_PASSWORD: ***
+2026-09-17T10:45:46.9353729Z ##[endgroup]
+2026-09-17T10:45:46.9370371Z ##[debug]/usr/bin/bash -e /home/runner/work/_temp/f93868e1-eb87-4c6a-95b1-41f43dac458e.sh
+2026-09-17T10:45:53.4573025Z Finished supabase link.
+2026-09-17T10:45:54.0371655Z ##[debug]Finishing: Link to Supabase Project
+2026-09-17T10:45:54.0381233Z ##[debug]Evaluating: secrets.SUPABASE_ACCESS_TOKEN
+2026-09-17T10:45:54.0381730Z ##[debug]Evaluating Index:
+2026-09-17T10:45:54.0382014Z ##[debug]..Evaluating secrets:
+2026-09-17T10:45:54.0382597Z ##[debug]..=> Object
+2026-09-17T10:45:54.0382917Z ##[debug]..Evaluating String:
+2026-09-17T10:45:54.0383225Z ##[debug]..=> 'SUPABASE_ACCESS_TOKEN'
+2026-09-17T10:45:54.0383790Z ##[debug]=> '***'
+2026-09-17T10:45:54.0384136Z ##[debug]Result: '***'
+2026-09-17T10:45:54.0385452Z ##[debug]Evaluating: secrets.SUPABASE_DB_PASSWORD
+2026-09-17T10:45:54.0385795Z ##[debug]Evaluating Index:
+2026-09-17T10:45:54.0386041Z ##[debug]..Evaluating secrets:
+2026-09-17T10:45:54.0386279Z ##[debug]..=> Object
+2026-09-17T10:45:54.0386542Z ##[debug]..Evaluating String:
+2026-09-17T10:45:54.0386794Z ##[debug]..=> 'SUPABASE_DB_PASSWORD'
+2026-09-17T10:45:54.0387115Z ##[debug]=> '***'
+2026-09-17T10:45:54.0387386Z ##[debug]Result: '***'
+2026-09-17T10:45:54.0388013Z ##[debug]Evaluating condition for step: 'Verify migration state'
+2026-09-17T10:45:54.0389558Z ##[debug]Evaluating: success()
+2026-09-17T10:45:54.0390003Z ##[debug]Evaluating success:
+2026-09-17T10:45:54.0390447Z ##[debug]=> true
+2026-09-17T10:45:54.0390820Z ##[debug]Result: true
+2026-09-17T10:45:54.0391360Z ##[debug]Starting: Verify migration state
+2026-09-17T10:45:54.0399506Z ##[debug]Loading inputs
+2026-09-17T10:45:54.0400853Z ##[debug]Loading env
+2026-09-17T10:45:54.0405338Z ##[group]Run npx --yes supabase@2.117.0 migration list
+2026-09-17T10:45:54.0405815Z [36;1mnpx --yes supabase@2.117.0 migration list[0m
+2026-09-17T10:45:54.0425006Z shell: /usr/bin/bash -e {0}
+2026-09-17T10:45:54.0425343Z env:
+2026-09-17T10:45:54.0425803Z   SUPABASE_ACCESS_TOKEN: ***
+2026-09-17T10:45:54.0426117Z   SUPABASE_DB_PASSWORD: ***
+2026-09-17T10:45:54.0426379Z ##[endgroup]
+2026-09-17T10:45:54.0765224Z ##[debug]/usr/bin/bash -e /home/runner/work/_temp/af8a47be-6186-4bb5-9fc9-c4087f1077e3.sh
+2026-09-17T10:45:55.4656409Z IPv6 is not supported on your current network
+2026-09-17T10:45:55.4657889Z Run supabase link --project-ref *** to setup IPv4 connection.
+2026-09-17T10:45:55.4815107Z ##[error]Process completed with exit code 1.
+2026-09-17T10:45:55.4825298Z ##[debug]Finishing: Verify migration state
+2026-09-17T10:45:55.4842352Z ##[debug]Evaluating: secrets.SUPABASE_ACCESS_TOKEN
+2026-09-17T10:45:55.4842807Z ##[debug]Evaluating Index:
+2026-09-17T10:45:55.4843090Z ##[debug]..Evaluating secrets:
+2026-09-17T10:45:55.4843477Z ##[debug]..=> Object
+2026-09-17T10:45:55.4843768Z ##[debug]..Evaluating String:
+2026-09-17T10:45:55.4844068Z ##[debug]..=> 'SUPABASE_ACCESS_TOKEN'
+2026-09-17T10:45:55.4844592Z ##[debug]=> '***'
+2026-09-17T10:45:55.4844915Z ##[debug]Result: '***'
+2026-09-17T10:45:55.4845684Z ##[debug]Evaluating: secrets.SUPABASE_DB_PASSWORD
+2026-09-17T10:45:55.4846010Z ##[debug]Evaluating Index:
+2026-09-17T10:45:55.4846246Z ##[debug]..Evaluating secrets:
+2026-09-17T10:45:55.4846480Z ##[debug]..=> Object
+2026-09-17T10:45:55.4846793Z ##[debug]..Evaluating String:
+2026-09-17T10:45:55.4847050Z ##[debug]..=> 'SUPABASE_DB_PASSWORD'
+2026-09-17T10:45:55.4847398Z ##[debug]=> '***'
+2026-09-17T10:45:55.4847660Z ##[debug]Result: '***'
+2026-09-17T10:45:55.4848251Z ##[debug]Evaluating condition for step: 'Push Migrations'
+2026-09-17T10:45:55.4849544Z ##[debug]Evaluating: success()
+2026-09-17T10:45:55.4849928Z ##[debug]Evaluating success:
+2026-09-17T10:45:55.4850344Z ##[debug]=> false
+2026-09-17T10:45:55.4850706Z ##[debug]Result: false
+2026-09-17T10:45:55.4874378Z ##[debug]Evaluating condition for step: 'Post Checkout code'
+2026-09-17T10:45:55.4876690Z ##[debug]Evaluating: always()
+2026-09-17T10:45:55.4877076Z ##[debug]Evaluating always:
+2026-09-17T10:45:55.4877824Z ##[debug]=> true
+2026-09-17T10:45:55.4878223Z ##[debug]Result: true
+2026-09-17T10:45:55.4878828Z ##[debug]Starting: Post Checkout code
+2026-09-17T10:45:55.4917759Z ##[debug]Loading inputs
+2026-09-17T10:45:55.4919330Z ##[debug]Evaluating: github.repository
+2026-09-17T10:45:55.4919646Z ##[debug]Evaluating Index:
+2026-09-17T10:45:55.4919942Z ##[debug]..Evaluating github:
+2026-09-17T10:45:55.4920225Z ##[debug]..=> Object
+2026-09-17T10:45:55.4920475Z ##[debug]..Evaluating String:
+2026-09-17T10:45:55.4920790Z ##[debug]..=> 'repository'
+2026-09-17T10:45:55.4921135Z ##[debug]=> 'faiyaas-dev/online-voting-system'
+2026-09-17T10:45:55.4921902Z ##[debug]Result: 'faiyaas-dev/online-voting-system'
+2026-09-17T10:45:55.4924398Z ##[debug]Evaluating: github.token
+2026-09-17T10:45:55.4924785Z ##[debug]Evaluating Index:
+2026-09-17T10:45:55.4925077Z ##[debug]..Evaluating github:
+2026-09-17T10:45:55.4925395Z ##[debug]..=> Object
+2026-09-17T10:45:55.4925661Z ##[debug]..Evaluating String:
+2026-09-17T10:45:55.4925942Z ##[debug]..=> 'token'
+2026-09-17T10:45:55.4928051Z ##[debug]=> '***'
+2026-09-17T10:45:55.4930030Z ##[debug]Result: '***'
+2026-09-17T10:45:55.4941934Z ##[debug]Loading env
+2026-09-17T10:45:55.4947686Z Node 20 is being deprecated. This workflow is running with Node 24 by default. If you need to temporarily use Node 20, you can set the ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION=true environment variable. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
+2026-09-17T10:45:55.4949114Z Post job cleanup.
+2026-09-17T10:45:55.5554222Z ##[debug]Getting git version
+2026-09-17T10:45:55.5554756Z [command]/usr/bin/git version
+2026-09-17T10:45:55.5580623Z git version 2.55.0
+2026-09-17T10:45:55.5592511Z ##[debug]0
+2026-09-17T10:45:55.5593385Z ##[debug]git version 2.55.0
+2026-09-17T10:45:55.5594134Z ##[debug]
+2026-09-17T10:45:55.5594967Z ##[debug]Set git useragent to: git/2.55.0 (github-actions-checkout)
+2026-09-17T10:45:55.5596086Z ::add-mask::***
+2026-09-17T10:45:55.5607409Z Temporarily overriding HOME='/home/runner/work/_temp/9272b202-3a56-4247-a2ce-09ab6d495777' before making global git config changes
+2026-09-17T10:45:55.5608968Z Adding repository directory to the temporary git global config as a safe directory
+2026-09-17T10:45:55.5609997Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/online-voting-system/online-voting-system
+2026-09-17T10:45:55.5633524Z ##[debug]0
+2026-09-17T10:45:55.5634213Z ##[debug]
+2026-09-17T10:45:55.5639006Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-09-17T10:45:55.5660835Z ##[debug]1
+2026-09-17T10:45:55.5661439Z ##[debug]
+2026-09-17T10:45:55.5664978Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-09-17T10:45:55.5831546Z ##[debug]0
+2026-09-17T10:45:55.5832404Z ##[debug]
+2026-09-17T10:45:55.5839357Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-09-17T10:45:55.5858191Z http.https://github.com/.extraheader
+2026-09-17T10:45:55.5861647Z ##[debug]0
+2026-09-17T10:45:55.5862279Z ##[debug]http.https://github.com/.extraheader
+2026-09-17T10:45:55.5862557Z ##[debug]
+2026-09-17T10:45:55.5867804Z [command]/usr/bin/git config --local --unset-all http.https://github.com/.extraheader
+2026-09-17T10:45:55.5888164Z ##[debug]0
+2026-09-17T10:45:55.5888856Z ##[debug]
+2026-09-17T10:45:55.5893032Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-09-17T10:45:55.6081768Z ##[debug]0
+2026-09-17T10:45:55.6083590Z ##[debug]
+2026-09-17T10:45:55.6083977Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-09-17T10:45:55.6105210Z ##[debug]1
+2026-09-17T10:45:55.6105939Z ##[debug]
+2026-09-17T10:45:55.6110894Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-09-17T10:45:55.6252753Z ##[debug]0
+2026-09-17T10:45:55.6254900Z ##[debug]
+2026-09-17T10:45:55.6255838Z ##[debug]Unsetting HOME override
+2026-09-17T10:45:55.6311050Z ##[debug]Node Action run completed with exit code 0
+2026-09-17T10:45:55.6314198Z ##[debug]Finishing: Post Checkout code
+2026-09-17T10:45:55.6366955Z ##[debug]Starting: Complete job
+2026-09-17T10:45:55.6369555Z Uploading runner diagnostic logs
+2026-09-17T10:45:55.6380208Z ##[debug]Starting diagnostic file upload.
+2026-09-17T10:45:55.6380821Z ##[debug]Setting up diagnostic log folders.
+2026-09-17T10:45:55.6383084Z ##[debug]Creating diagnostic log files folder.
+2026-09-17T10:45:55.6391175Z ##[debug]Copying 1 worker diagnostic logs.
+2026-09-17T10:45:55.6399298Z ##[debug]Copying 1 runner diagnostic logs.
+2026-09-17T10:45:55.6400277Z ##[debug]Zipping diagnostic files.
+2026-09-17T10:45:55.6456770Z ##[debug]Uploading diagnostic metadata file.
+2026-09-17T10:45:55.6482872Z ##[debug]Diagnostic file upload complete.
+2026-09-17T10:45:55.6483406Z Completed runner diagnostic log upload
+2026-09-17T10:45:55.6483736Z Cleaning up orphan processes
+2026-09-17T10:45:55.6695392Z ##[warning]Node.js 20 is deprecated. The following actions target Node.js 20 but are being forced to run on Node.js 24: actions/checkout@v4. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
+2026-09-17T10:45:55.6696911Z ##[debug]Finishing: Complete job
+2026-09-17T10:45:55.6720164Z ##[debug]Finishing: deploy

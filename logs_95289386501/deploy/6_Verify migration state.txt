@@ -1,0 +1,36 @@
+﻿2026-09-17T10:45:54.0381223Z ##[debug]Evaluating: secrets.SUPABASE_ACCESS_TOKEN
+2026-09-17T10:45:54.0381728Z ##[debug]Evaluating Index:
+2026-09-17T10:45:54.0382013Z ##[debug]..Evaluating secrets:
+2026-09-17T10:45:54.0382594Z ##[debug]..=> Object
+2026-09-17T10:45:54.0382915Z ##[debug]..Evaluating String:
+2026-09-17T10:45:54.0383223Z ##[debug]..=> 'SUPABASE_ACCESS_TOKEN'
+2026-09-17T10:45:54.0383788Z ##[debug]=> '***'
+2026-09-17T10:45:54.0384135Z ##[debug]Result: '***'
+2026-09-17T10:45:54.0385449Z ##[debug]Evaluating: secrets.SUPABASE_DB_PASSWORD
+2026-09-17T10:45:54.0385793Z ##[debug]Evaluating Index:
+2026-09-17T10:45:54.0386038Z ##[debug]..Evaluating secrets:
+2026-09-17T10:45:54.0386277Z ##[debug]..=> Object
+2026-09-17T10:45:54.0386540Z ##[debug]..Evaluating String:
+2026-09-17T10:45:54.0386792Z ##[debug]..=> 'SUPABASE_DB_PASSWORD'
+2026-09-17T10:45:54.0387114Z ##[debug]=> '***'
+2026-09-17T10:45:54.0387384Z ##[debug]Result: '***'
+2026-09-17T10:45:54.0387914Z ##[debug]Evaluating condition for step: 'Verify migration state'
+2026-09-17T10:45:54.0389556Z ##[debug]Evaluating: success()
+2026-09-17T10:45:54.0390001Z ##[debug]Evaluating success:
+2026-09-17T10:45:54.0390445Z ##[debug]=> true
+2026-09-17T10:45:54.0390818Z ##[debug]Result: true
+2026-09-17T10:45:54.0391358Z ##[debug]Starting: Verify migration state
+2026-09-17T10:45:54.0399494Z ##[debug]Loading inputs
+2026-09-17T10:45:54.0400849Z ##[debug]Loading env
+2026-09-17T10:45:54.0405332Z ##[group]Run npx --yes supabase@2.117.0 migration list
+2026-09-17T10:45:54.0405810Z [36;1mnpx --yes supabase@2.117.0 migration list[0m
+2026-09-17T10:45:54.0424992Z shell: /usr/bin/bash -e {0}
+2026-09-17T10:45:54.0425341Z env:
+2026-09-17T10:45:54.0425802Z   SUPABASE_ACCESS_TOKEN: ***
+2026-09-17T10:45:54.0426112Z   SUPABASE_DB_PASSWORD: ***
+2026-09-17T10:45:54.0426376Z ##[endgroup]
+2026-09-17T10:45:54.0765197Z ##[debug]/usr/bin/bash -e /home/runner/work/_temp/af8a47be-6186-4bb5-9fc9-c4087f1077e3.sh
+2026-09-17T10:45:55.4656354Z IPv6 is not supported on your current network
+2026-09-17T10:45:55.4657848Z Run supabase link --project-ref *** to setup IPv4 connection.
+2026-09-17T10:45:55.4815076Z ##[error]Process completed with exit code 1.
+2026-09-17T10:45:55.4825285Z ##[debug]Finishing: Verify migration state

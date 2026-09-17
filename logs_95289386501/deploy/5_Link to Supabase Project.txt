@@ -1,0 +1,46 @@
+﻿2026-09-17T10:45:46.9292597Z ##[debug]Evaluating: secrets.SUPABASE_ACCESS_TOKEN
+2026-09-17T10:45:46.9293036Z ##[debug]Evaluating Index:
+2026-09-17T10:45:46.9293389Z ##[debug]..Evaluating secrets:
+2026-09-17T10:45:46.9293686Z ##[debug]..=> Object
+2026-09-17T10:45:46.9294015Z ##[debug]..Evaluating String:
+2026-09-17T10:45:46.9294278Z ##[debug]..=> 'SUPABASE_ACCESS_TOKEN'
+2026-09-17T10:45:46.9294878Z ##[debug]=> '***'
+2026-09-17T10:45:46.9295236Z ##[debug]Result: '***'
+2026-09-17T10:45:46.9296001Z ##[debug]Evaluating: secrets.SUPABASE_DB_PASSWORD
+2026-09-17T10:45:46.9296315Z ##[debug]Evaluating Index:
+2026-09-17T10:45:46.9296610Z ##[debug]..Evaluating secrets:
+2026-09-17T10:45:46.9296870Z ##[debug]..=> Object
+2026-09-17T10:45:46.9297097Z ##[debug]..Evaluating String:
+2026-09-17T10:45:46.9297404Z ##[debug]..=> 'SUPABASE_DB_PASSWORD'
+2026-09-17T10:45:46.9297704Z ##[debug]=> '***'
+2026-09-17T10:45:46.9297974Z ##[debug]Result: '***'
+2026-09-17T10:45:46.9298504Z ##[debug]Evaluating condition for step: 'Link to Supabase Project'
+2026-09-17T10:45:46.9299800Z ##[debug]Evaluating: success()
+2026-09-17T10:45:46.9300176Z ##[debug]Evaluating success:
+2026-09-17T10:45:46.9300564Z ##[debug]=> true
+2026-09-17T10:45:46.9300967Z ##[debug]Result: true
+2026-09-17T10:45:46.9301474Z ##[debug]Starting: Link to Supabase Project
+2026-09-17T10:45:46.9310479Z ##[debug]Loading inputs
+2026-09-17T10:45:46.9316749Z ##[debug]Evaluating: format('npx --yes supabase@2.117.0 link --project-ref {0}', secrets.SUPABASE_PROJECT_ID)
+2026-09-17T10:45:46.9317276Z ##[debug]Evaluating format:
+2026-09-17T10:45:46.9320094Z ##[debug]..Evaluating String:
+2026-09-17T10:45:46.9320533Z ##[debug]..=> 'npx --yes supabase@2.117.0 link --project-ref {0}'
+2026-09-17T10:45:46.9329114Z ##[debug]..Evaluating Index:
+2026-09-17T10:45:46.9329479Z ##[debug]....Evaluating secrets:
+2026-09-17T10:45:46.9329822Z ##[debug]....=> Object
+2026-09-17T10:45:46.9330078Z ##[debug]....Evaluating String:
+2026-09-17T10:45:46.9330384Z ##[debug]....=> 'SUPABASE_PROJECT_ID'
+2026-09-17T10:45:46.9330773Z ##[debug]..=> '***'
+2026-09-17T10:45:46.9331551Z ##[debug]=> 'npx --yes supabase@2.117.0 link --project-ref ***'
+2026-09-17T10:45:46.9331998Z ##[debug]Result: 'npx --yes supabase@2.117.0 link --project-ref ***'
+2026-09-17T10:45:46.9332901Z ##[debug]Loading env
+2026-09-17T10:45:46.9336691Z ##[group]Run npx --yes supabase@2.117.0 link --project-ref ***
+2026-09-17T10:45:46.9337089Z [36;1mnpx --yes supabase@2.117.0 link --project-ref ***[0m
+2026-09-17T10:45:46.9352521Z shell: /usr/bin/bash -e {0}
+2026-09-17T10:45:46.9352791Z env:
+2026-09-17T10:45:46.9353154Z   SUPABASE_ACCESS_TOKEN: ***
+2026-09-17T10:45:46.9353493Z   SUPABASE_DB_PASSWORD: ***
+2026-09-17T10:45:46.9353728Z ##[endgroup]
+2026-09-17T10:45:46.9370364Z ##[debug]/usr/bin/bash -e /home/runner/work/_temp/f93868e1-eb87-4c6a-95b1-41f43dac458e.sh
+2026-09-17T10:45:53.4572971Z Finished supabase link.
+2026-09-17T10:45:54.0371636Z ##[debug]Finishing: Link to Supabase Project

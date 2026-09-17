@@ -12,6 +12,7 @@ The system guarantees election integrity by enforcing tenant boundaries, voter e
 - [Locked Architectural Decisions](#locked-architectural-decisions)
 - [Administrative & User Role Hierarchy](#administrative--user-role-hierarchy)
 - [Role Permission Matrix](#role-permission-matrix)
+- [End-to-End Project Flow](#end-to-end-project-flow)
 - [Tech Stack](#tech-stack)
 - [Prerequisites & System Requirements](#prerequisites--system-requirements)
 - [Environment Setup](#environment-setup)
@@ -100,6 +101,16 @@ institutions
 | **Cast Ballot** | ❌ | ❌ | ❌ | ✅ *(if eligible & open)* |
 | **View Election Results** | ✅ *(audit RPC)* | ✅ *(audit RPC)* | ❌ *(locked till close)* | ❌ *(locked till close)* |
 | **Cross-Tenant Aggregate Metrics** | ✅ *(RPC only)* | ❌ | ❌ | ❌ |
+
+---
+
+## End-to-End Project Flow
+
+The complete flow for visitors, Platform Admins, Institution Admins, Department
+Admins, and Voters is documented in the
+[End-to-End Project Flow](docs/project-flow.md). It includes authentication,
+roster claiming, election management, nominations, candidate approval, vote
+enforcement, result visibility, and platform metrics on one Mermaid chart.
 
 ---
 
@@ -260,6 +271,8 @@ To enable automatic database migration deployment via GitHub Actions (`.github/w
 | `SUPABASE_PROJECT_ID` | Go to Supabase Dashboard > **Project Settings** > **General** > Copy **Reference ID**. |
 | `SUPABASE_ACCESS_TOKEN` | Go to Supabase Account Settings > **Access Tokens** > Generate new token. |
 | `SUPABASE_DB_PASSWORD` | Database password configured when creating the Supabase project. |
+
+For the complete investigation history, evidence, failure interpretation, and recovery procedure, see [Supabase Deployment Diagnosis](./SUPABASE_DEPLOYMENT_DIAGNOSIS.md).
 
 ### Netlify Deployment & Secrets
 

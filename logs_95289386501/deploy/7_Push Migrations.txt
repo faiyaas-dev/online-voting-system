@@ -1,0 +1,21 @@
+﻿2026-09-17T10:45:55.4842341Z ##[debug]Evaluating: secrets.SUPABASE_ACCESS_TOKEN
+2026-09-17T10:45:55.4842805Z ##[debug]Evaluating Index:
+2026-09-17T10:45:55.4843089Z ##[debug]..Evaluating secrets:
+2026-09-17T10:45:55.4843475Z ##[debug]..=> Object
+2026-09-17T10:45:55.4843766Z ##[debug]..Evaluating String:
+2026-09-17T10:45:55.4844065Z ##[debug]..=> 'SUPABASE_ACCESS_TOKEN'
+2026-09-17T10:45:55.4844589Z ##[debug]=> '***'
+2026-09-17T10:45:55.4844913Z ##[debug]Result: '***'
+2026-09-17T10:45:55.4845682Z ##[debug]Evaluating: secrets.SUPABASE_DB_PASSWORD
+2026-09-17T10:45:55.4846008Z ##[debug]Evaluating Index:
+2026-09-17T10:45:55.4846245Z ##[debug]..Evaluating secrets:
+2026-09-17T10:45:55.4846478Z ##[debug]..=> Object
+2026-09-17T10:45:55.4846791Z ##[debug]..Evaluating String:
+2026-09-17T10:45:55.4847047Z ##[debug]..=> 'SUPABASE_DB_PASSWORD'
+2026-09-17T10:45:55.4847397Z ##[debug]=> '***'
+2026-09-17T10:45:55.4847658Z ##[debug]Result: '***'
+2026-09-17T10:45:55.4848129Z ##[debug]Evaluating condition for step: 'Push Migrations'
+2026-09-17T10:45:55.4849542Z ##[debug]Evaluating: success()
+2026-09-17T10:45:55.4849927Z ##[debug]Evaluating success:
+2026-09-17T10:45:55.4850342Z ##[debug]=> false
+2026-09-17T10:45:55.4850703Z ##[debug]Result: false

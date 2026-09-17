@@ -1,0 +1,65 @@
+﻿2026-09-17T10:45:55.4874371Z ##[debug]Evaluating condition for step: 'Post Checkout code'
+2026-09-17T10:45:55.4876687Z ##[debug]Evaluating: always()
+2026-09-17T10:45:55.4877074Z ##[debug]Evaluating always:
+2026-09-17T10:45:55.4877822Z ##[debug]=> true
+2026-09-17T10:45:55.4878221Z ##[debug]Result: true
+2026-09-17T10:45:55.4878827Z ##[debug]Starting: Post Checkout code
+2026-09-17T10:45:55.4917746Z ##[debug]Loading inputs
+2026-09-17T10:45:55.4919327Z ##[debug]Evaluating: github.repository
+2026-09-17T10:45:55.4919645Z ##[debug]Evaluating Index:
+2026-09-17T10:45:55.4919939Z ##[debug]..Evaluating github:
+2026-09-17T10:45:55.4920223Z ##[debug]..=> Object
+2026-09-17T10:45:55.4920470Z ##[debug]..Evaluating String:
+2026-09-17T10:45:55.4920789Z ##[debug]..=> 'repository'
+2026-09-17T10:45:55.4921133Z ##[debug]=> 'faiyaas-dev/online-voting-system'
+2026-09-17T10:45:55.4921896Z ##[debug]Result: 'faiyaas-dev/online-voting-system'
+2026-09-17T10:45:55.4924394Z ##[debug]Evaluating: github.token
+2026-09-17T10:45:55.4924720Z ##[debug]Evaluating Index:
+2026-09-17T10:45:55.4925075Z ##[debug]..Evaluating github:
+2026-09-17T10:45:55.4925394Z ##[debug]..=> Object
+2026-09-17T10:45:55.4925659Z ##[debug]..Evaluating String:
+2026-09-17T10:45:55.4925940Z ##[debug]..=> 'token'
+2026-09-17T10:45:55.4928049Z ##[debug]=> '***'
+2026-09-17T10:45:55.4930026Z ##[debug]Result: '***'
+2026-09-17T10:45:55.4941929Z ##[debug]Loading env
+2026-09-17T10:45:55.4947677Z Node 20 is being deprecated. This workflow is running with Node 24 by default. If you need to temporarily use Node 20, you can set the ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION=true environment variable. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
+2026-09-17T10:45:55.4949107Z Post job cleanup.
+2026-09-17T10:45:55.5554178Z ##[debug]Getting git version
+2026-09-17T10:45:55.5554754Z [command]/usr/bin/git version
+2026-09-17T10:45:55.5580580Z git version 2.55.0
+2026-09-17T10:45:55.5592486Z ##[debug]0
+2026-09-17T10:45:55.5593329Z ##[debug]git version 2.55.0
+2026-09-17T10:45:55.5594132Z ##[debug]
+2026-09-17T10:45:55.5594963Z ##[debug]Set git useragent to: git/2.55.0 (github-actions-checkout)
+2026-09-17T10:45:55.5596082Z ::add-mask::***
+2026-09-17T10:45:55.5607382Z Temporarily overriding HOME='/home/runner/work/_temp/9272b202-3a56-4247-a2ce-09ab6d495777' before making global git config changes
+2026-09-17T10:45:55.5608959Z Adding repository directory to the temporary git global config as a safe directory
+2026-09-17T10:45:55.5609993Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/online-voting-system/online-voting-system
+2026-09-17T10:45:55.5633498Z ##[debug]0
+2026-09-17T10:45:55.5634208Z ##[debug]
+2026-09-17T10:45:55.5638984Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-09-17T10:45:55.5660815Z ##[debug]1
+2026-09-17T10:45:55.5661436Z ##[debug]
+2026-09-17T10:45:55.5664942Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-09-17T10:45:55.5831526Z ##[debug]0
+2026-09-17T10:45:55.5832399Z ##[debug]
+2026-09-17T10:45:55.5839338Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-09-17T10:45:55.5858169Z http.https://github.com/.extraheader
+2026-09-17T10:45:55.5861640Z ##[debug]0
+2026-09-17T10:45:55.5862275Z ##[debug]http.https://github.com/.extraheader
+2026-09-17T10:45:55.5862555Z ##[debug]
+2026-09-17T10:45:55.5867798Z [command]/usr/bin/git config --local --unset-all http.https://github.com/.extraheader
+2026-09-17T10:45:55.5888147Z ##[debug]0
+2026-09-17T10:45:55.5888851Z ##[debug]
+2026-09-17T10:45:55.5893024Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-09-17T10:45:55.6081747Z ##[debug]0
+2026-09-17T10:45:55.6083294Z ##[debug]
+2026-09-17T10:45:55.6083972Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-09-17T10:45:55.6105179Z ##[debug]1
+2026-09-17T10:45:55.6105933Z ##[debug]
+2026-09-17T10:45:55.6110849Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-09-17T10:45:55.6252714Z ##[debug]0
+2026-09-17T10:45:55.6254889Z ##[debug]
+2026-09-17T10:45:55.6255829Z ##[debug]Unsetting HOME override
+2026-09-17T10:45:55.6311033Z ##[debug]Node Action run completed with exit code 0
+2026-09-17T10:45:55.6314193Z ##[debug]Finishing: Post Checkout code

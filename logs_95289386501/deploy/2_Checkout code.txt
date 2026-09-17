@@ -1,0 +1,189 @@
+﻿2026-09-17T10:45:39.4463201Z ##[debug]Evaluating condition for step: 'Checkout code'
+2026-09-17T10:45:39.4487897Z ##[debug]Evaluating: success()
+2026-09-17T10:45:39.4490972Z ##[debug]Evaluating success:
+2026-09-17T10:45:39.4501604Z ##[debug]=> true
+2026-09-17T10:45:39.4506011Z ##[debug]Result: true
+2026-09-17T10:45:39.4527788Z ##[debug]Starting: Checkout code
+2026-09-17T10:45:39.4592227Z ##[debug]Register post job cleanup for action: actions/checkout@v4
+2026-09-17T10:45:39.4661634Z ##[debug]Loading inputs
+2026-09-17T10:45:39.4670923Z ##[debug]Evaluating: github.repository
+2026-09-17T10:45:39.4671745Z ##[debug]Evaluating Index:
+2026-09-17T10:45:39.4673604Z ##[debug]..Evaluating github:
+2026-09-17T10:45:39.4674396Z ##[debug]..=> Object
+2026-09-17T10:45:39.4678206Z ##[debug]..Evaluating String:
+2026-09-17T10:45:39.4678988Z ##[debug]..=> 'repository'
+2026-09-17T10:45:39.4682290Z ##[debug]=> 'faiyaas-dev/online-voting-system'
+2026-09-17T10:45:39.4683595Z ##[debug]Result: 'faiyaas-dev/online-voting-system'
+2026-09-17T10:45:39.4687170Z ##[debug]Evaluating: github.token
+2026-09-17T10:45:39.4687757Z ##[debug]Evaluating Index:
+2026-09-17T10:45:39.4688199Z ##[debug]..Evaluating github:
+2026-09-17T10:45:39.4688674Z ##[debug]..=> Object
+2026-09-17T10:45:39.4689104Z ##[debug]..Evaluating String:
+2026-09-17T10:45:39.4689525Z ##[debug]..=> 'token'
+2026-09-17T10:45:39.4692740Z ##[debug]=> '***'
+2026-09-17T10:45:39.4695423Z ##[debug]Result: '***'
+2026-09-17T10:45:39.4713048Z ##[debug]Loading env
+2026-09-17T10:45:39.4757516Z Node 20 is being deprecated. This workflow is running with Node 24 by default. If you need to temporarily use Node 20, you can set the ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION=true environment variable. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
+2026-09-17T10:45:39.4764512Z ##[group]Run actions/checkout@v4
+2026-09-17T10:45:39.4765181Z with:
+2026-09-17T10:45:39.4765631Z   repository: faiyaas-dev/online-voting-system
+2026-09-17T10:45:39.4768441Z   token: ***
+2026-09-17T10:45:39.4768853Z   ssh-strict: true
+2026-09-17T10:45:39.4769227Z   ssh-user: git
+2026-09-17T10:45:39.4769618Z   persist-credentials: true
+2026-09-17T10:45:39.4770043Z   clean: true
+2026-09-17T10:45:39.4770419Z   sparse-checkout-cone-mode: true
+2026-09-17T10:45:39.4770872Z   fetch-depth: 1
+2026-09-17T10:45:39.4771243Z   fetch-tags: false
+2026-09-17T10:45:39.4771635Z   show-progress: true
+2026-09-17T10:45:39.4771999Z   lfs: false
+2026-09-17T10:45:39.4772530Z   submodules: false
+2026-09-17T10:45:39.4772956Z   set-safe-directory: true
+2026-09-17T10:45:39.4773359Z   allow-unsafe-pr-checkout: false
+2026-09-17T10:45:39.4773923Z ##[endgroup]
+2026-09-17T10:45:39.5501819Z ##[debug]GITHUB_WORKSPACE = '/home/runner/work/online-voting-system/online-voting-system'
+2026-09-17T10:45:39.5504253Z ##[debug]qualified repository = 'faiyaas-dev/online-voting-system'
+2026-09-17T10:45:39.5505479Z ##[debug]ref = 'refs/heads/main'
+2026-09-17T10:45:39.5506486Z ##[debug]commit = 'acc92168b6bea05089673b6470de6c4d4e8aa4df'
+2026-09-17T10:45:39.5507541Z ##[debug]clean = true
+2026-09-17T10:45:39.5508319Z ##[debug]filter = undefined
+2026-09-17T10:45:39.5509169Z ##[debug]fetch depth = 1
+2026-09-17T10:45:39.5510009Z ##[debug]fetch tags = false
+2026-09-17T10:45:39.5510829Z ##[debug]show progress = true
+2026-09-17T10:45:39.5511655Z ##[debug]lfs = false
+2026-09-17T10:45:39.5512528Z ##[debug]submodules = false
+2026-09-17T10:45:39.5513824Z ##[debug]recursive submodules = false
+2026-09-17T10:45:39.5514694Z ##[debug]GitHub Host URL = 
+2026-09-17T10:45:39.5515642Z ##[debug]allow unsafe PR checkout = false
+2026-09-17T10:45:39.5517208Z ::add-matcher::/home/runner/work/_actions/actions/checkout/v4/dist/problem-matcher.json
+2026-09-17T10:45:39.5599804Z ##[debug]Added matchers: 'checkout-git'. Problem matchers scan action output for known warning or error strings and report these inline.
+2026-09-17T10:45:39.5606849Z Syncing repository: faiyaas-dev/online-voting-system
+2026-09-17T10:45:39.5608563Z ::group::Getting Git version info
+2026-09-17T10:45:39.5609950Z ##[group]Getting Git version info
+2026-09-17T10:45:39.5611224Z Working directory is '/home/runner/work/online-voting-system/online-voting-system'
+2026-09-17T10:45:39.5612812Z ##[debug]Getting git version
+2026-09-17T10:45:39.5613509Z [command]/usr/bin/git version
+2026-09-17T10:45:39.5919209Z git version 2.55.0
+2026-09-17T10:45:39.5945281Z ##[debug]0
+2026-09-17T10:45:39.5946552Z ##[debug]git version 2.55.0
+2026-09-17T10:45:39.5947204Z ##[debug]
+2026-09-17T10:45:39.5948533Z ##[debug]Set git useragent to: git/2.55.0 (github-actions-checkout)
+2026-09-17T10:45:39.5950226Z ::endgroup::
+2026-09-17T10:45:39.5950860Z ##[endgroup]
+2026-09-17T10:45:39.5957165Z ::add-mask::***
+2026-09-17T10:45:39.5960486Z Temporarily overriding HOME='/home/runner/work/_temp/d4ef5035-e1e9-4705-a7df-e8243d1d9f90' before making global git config changes
+2026-09-17T10:45:39.5961986Z Adding repository directory to the temporary git global config as a safe directory
+2026-09-17T10:45:39.5963539Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/online-voting-system/online-voting-system
+2026-09-17T10:45:39.5990952Z ##[debug]0
+2026-09-17T10:45:39.5991914Z ##[debug]
+2026-09-17T10:45:39.5996746Z Deleting the contents of '/home/runner/work/online-voting-system/online-voting-system'
+2026-09-17T10:45:39.6001129Z ::group::Initializing the repository
+2026-09-17T10:45:39.6001863Z ##[group]Initializing the repository
+2026-09-17T10:45:39.6005540Z [command]/usr/bin/git init /home/runner/work/online-voting-system/online-voting-system
+2026-09-17T10:45:39.8872449Z hint: Using 'master' as the name for the initial branch. This default branch name
+2026-09-17T10:45:39.8873495Z hint: will change to "main" in Git 3.0. To configure the initial branch name
+2026-09-17T10:45:39.8874389Z hint: to use in all of your new repositories, which will suppress this warning,
+2026-09-17T10:45:39.8875115Z hint: call:
+2026-09-17T10:45:39.8875549Z hint:
+2026-09-17T10:45:39.8876046Z hint: 	git config --global init.defaultBranch <name>
+2026-09-17T10:45:39.8876627Z hint:
+2026-09-17T10:45:39.8877261Z hint: Names commonly chosen instead of 'master' are 'main', 'trunk' and
+2026-09-17T10:45:39.8878054Z hint: 'development'. The just-created branch can be renamed via this command:
+2026-09-17T10:45:39.8878748Z hint:
+2026-09-17T10:45:39.8879163Z hint: 	git branch -m <name>
+2026-09-17T10:45:39.8879603Z hint:
+2026-09-17T10:45:39.8880183Z hint: Disable this message with "git config set advice.defaultBranchName false"
+2026-09-17T10:45:39.9585774Z Initialized empty Git repository in /home/runner/work/online-voting-system/online-voting-system/.git/
+2026-09-17T10:45:39.9590379Z ##[debug]0
+2026-09-17T10:45:39.9591661Z ##[debug]Initialized empty Git repository in /home/runner/work/online-voting-system/online-voting-system/.git/
+2026-09-17T10:45:39.9592658Z ##[debug]
+2026-09-17T10:45:39.9596778Z [command]/usr/bin/git remote add origin https://github.com/faiyaas-dev/online-voting-system
+2026-09-17T10:45:39.9636604Z ##[debug]0
+2026-09-17T10:45:39.9637768Z ##[debug]
+2026-09-17T10:45:39.9638995Z ::endgroup::
+2026-09-17T10:45:39.9639590Z ##[endgroup]
+2026-09-17T10:45:39.9640807Z ::group::Disabling automatic garbage collection
+2026-09-17T10:45:39.9641744Z ##[group]Disabling automatic garbage collection
+2026-09-17T10:45:39.9642841Z [command]/usr/bin/git config --local gc.auto 0
+2026-09-17T10:45:39.9665745Z ##[debug]0
+2026-09-17T10:45:39.9666950Z ##[debug]
+2026-09-17T10:45:39.9667939Z ::endgroup::
+2026-09-17T10:45:39.9668602Z ##[endgroup]
+2026-09-17T10:45:39.9669674Z ::group::Setting up auth
+2026-09-17T10:45:39.9670380Z ##[group]Setting up auth
+2026-09-17T10:45:39.9672957Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-09-17T10:45:39.9693085Z ##[debug]1
+2026-09-17T10:45:39.9694195Z ##[debug]
+2026-09-17T10:45:39.9697785Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-09-17T10:45:40.0022299Z ##[debug]0
+2026-09-17T10:45:40.0024034Z ##[debug]
+2026-09-17T10:45:40.0029051Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-09-17T10:45:40.0049186Z ##[debug]1
+2026-09-17T10:45:40.0050105Z ##[debug]
+2026-09-17T10:45:40.0054250Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-09-17T10:45:40.0195671Z ##[debug]0
+2026-09-17T10:45:40.0196728Z ##[debug]
+2026-09-17T10:45:40.0201620Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-09-17T10:45:40.0221028Z ##[debug]1
+2026-09-17T10:45:40.0222775Z ##[debug]
+2026-09-17T10:45:40.0226273Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-09-17T10:45:40.0366758Z ##[debug]0
+2026-09-17T10:45:40.0367815Z ##[debug]
+2026-09-17T10:45:40.0374389Z [command]/usr/bin/git config --local http.https://github.com/.extraheader AUTHORIZATION: basic ***
+2026-09-17T10:45:40.0393447Z ##[debug]0
+2026-09-17T10:45:40.0394273Z ##[debug]
+2026-09-17T10:45:40.1185686Z ::endgroup::
+2026-09-17T10:45:40.1186314Z ##[endgroup]
+2026-09-17T10:45:40.1187198Z ::group::Fetching the repository
+2026-09-17T10:45:40.1187783Z ##[group]Fetching the repository
+2026-09-17T10:45:40.1194338Z [command]/usr/bin/git -c protocol.version=2 fetch --no-tags --prune --no-recurse-submodules --depth=1 origin +acc92168b6bea05089673b6470de6c4d4e8aa4df:refs/remotes/origin/main
+2026-09-17T10:45:40.7071871Z From https://github.com/faiyaas-dev/online-voting-system
+2026-09-17T10:45:40.7074038Z  * [new ref]         acc92168b6bea05089673b6470de6c4d4e8aa4df -> origin/main
+2026-09-17T10:45:40.7076271Z ##[debug]0
+2026-09-17T10:45:40.7077561Z ##[debug]
+2026-09-17T10:45:40.7081326Z ::endgroup::
+2026-09-17T10:45:40.7082343Z ##[endgroup]
+2026-09-17T10:45:40.7084128Z ::group::Determining the checkout info
+2026-09-17T10:45:40.7085057Z ##[group]Determining the checkout info
+2026-09-17T10:45:40.7086392Z ::endgroup::
+2026-09-17T10:45:40.7087077Z ##[endgroup]
+2026-09-17T10:45:40.7088152Z [command]/usr/bin/git sparse-checkout disable
+2026-09-17T10:45:40.7118848Z ##[debug]0
+2026-09-17T10:45:40.7120709Z ##[debug]
+2026-09-17T10:45:40.7123722Z [command]/usr/bin/git config --local --unset-all extensions.worktreeConfig
+2026-09-17T10:45:40.7146014Z ##[debug]0
+2026-09-17T10:45:40.7148077Z ##[debug]
+2026-09-17T10:45:40.7150121Z ::group::Checking out the ref
+2026-09-17T10:45:40.7151706Z ##[group]Checking out the ref
+2026-09-17T10:45:40.7187061Z [command]/usr/bin/git checkout --progress --force -B main refs/remotes/origin/main
+2026-09-17T10:45:40.7293175Z Switched to a new branch 'main'
+2026-09-17T10:45:40.7295921Z branch 'main' set up to track 'origin/main'.
+2026-09-17T10:45:40.7300123Z ##[debug]0
+2026-09-17T10:45:40.7301910Z ##[debug]branch 'main' set up to track 'origin/main'.
+2026-09-17T10:45:40.7303505Z ##[debug]
+2026-09-17T10:45:40.7305108Z ::endgroup::
+2026-09-17T10:45:40.7306097Z ##[endgroup]
+2026-09-17T10:45:40.7326999Z ##[debug]0
+2026-09-17T10:45:40.7329089Z ##[debug]commit acc92168b6bea05089673b6470de6c4d4e8aa4df
+2026-09-17T10:45:40.7330566Z ##[debug]Author: faiyaas-dev <faiyaas.automates@gmail.com>
+2026-09-17T10:45:40.7331907Z ##[debug]Date:   Thu Sep 17 10:59:45 2026 +0530
+2026-09-17T10:45:40.7333628Z ##[debug]
+2026-09-17T10:45:40.7334734Z ##[debug]    ci: validate Supabase project reference
+2026-09-17T10:45:40.7335907Z ##[debug]    
+2026-09-17T10:45:40.7337142Z ##[debug]    Co-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>
+2026-09-17T10:45:40.7338538Z ##[debug]
+2026-09-17T10:45:40.7339510Z [command]/usr/bin/git log -1 --format=%H
+2026-09-17T10:45:40.7346186Z acc92168b6bea05089673b6470de6c4d4e8aa4df
+2026-09-17T10:45:40.7347994Z ##[debug]0
+2026-09-17T10:45:40.7349694Z ##[debug]acc92168b6bea05089673b6470de6c4d4e8aa4df
+2026-09-17T10:45:40.7350805Z ##[debug]
+2026-09-17T10:45:40.7352869Z ##[debug]Unsetting HOME override
+2026-09-17T10:45:40.7361930Z ::remove-matcher owner=checkout-git::
+2026-09-17T10:45:40.7377708Z ##[debug]Removed matchers: 'checkout-git'
+2026-09-17T10:45:40.7420677Z ##[debug]Node Action run completed with exit code 0
+2026-09-17T10:45:40.7451491Z ##[debug]Save intra-action state isPost = true
+2026-09-17T10:45:40.7453590Z ##[debug]Save intra-action state setSafeDirectory = true
+2026-09-17T10:45:40.7455709Z ##[debug]Save intra-action state repositoryPath = /home/runner/work/online-voting-system/online-voting-system
+2026-09-17T10:45:40.7460927Z ##[debug]Set output commit = acc92168b6bea05089673b6470de6c4d4e8aa4df
+2026-09-17T10:45:40.7462821Z ##[debug]Set output ref = refs/heads/main
+2026-09-17T10:45:40.7477969Z ##[debug]Finishing: Checkout code
