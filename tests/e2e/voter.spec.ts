@@ -26,7 +26,7 @@ test.describe('Voter Journey', () => {
 
     // 3. Vote
     await page.getByRole('link', { name: 'Vote' }).first().click();
-    await expect(page.getByRole('heading', { name: 'Vote' }, { exact: false })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Vote', exact: false })).toBeVisible();
     
     await page.getByRole('radio').first().click();
     await page.getByRole('button', { name: 'Cast Vote' }).click();

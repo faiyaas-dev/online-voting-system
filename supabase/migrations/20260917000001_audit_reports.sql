@@ -1,5 +1,7 @@
 -- Closed-election aggregate reporting for institution administrators.
 -- The report never exposes voter identities or raw ballots.
+create extension if not exists pgcrypto;
+
 create or replace function get_election_audit_report(p_election_id uuid)
 returns jsonb as $$
 declare

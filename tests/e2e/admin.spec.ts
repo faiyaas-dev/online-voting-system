@@ -12,7 +12,7 @@ test.describe('Institution Admin Journey', () => {
     await page.screenshot({ path: 'public/qa-screenshots/admin-dashboard.png', fullPage: true });
 
     await page.getByLabel('CSV File', { exact: false }).setInputFiles('sample-data/roster.csv');
-    await page.getByRole('button', { name: 'Upload CSV' }).click();
+    await page.getByRole('button', { name: 'Confirm and upload CSV' }).click();
     
     await page.screenshot({ path: 'public/qa-screenshots/admin-csv-upload.png', fullPage: true });
 
