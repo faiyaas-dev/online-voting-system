@@ -15,6 +15,7 @@ export default function NominatePage({ params }: { params: { id: string } }) {
 
   const [manifesto, setManifesto] = useState('')
   const [photoFile, setPhotoFile] = useState<File | null>(null)
+  const [photoPreview, setPhotoPreview] = useState<string | null>(null)
   const [photoError, setPhotoError] = useState('')
   const [error, setError] = useState('')
   const [success, setSuccess] = useState(false)
@@ -51,16 +52,26 @@ export default function NominatePage({ params }: { params: { id: string } }) {
   function handlePhotoChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0] ?? null
     setPhotoError('')
-    if (!file) { setPhotoFile(null); return }
+    if (!file) {
+      setPhotoFile(null)
+      setPhotoPreview(null)
+      return
+    }
     if (!ALLOWED_TYPES.includes(file.type)) {
       setPhotoError('Only JPEG, PNG, or WebP images are allowed.')
-      setPhotoFile(null); return
+      setPhotoFile(null)
+      setPhotoPreview(null)
+      return
     }
     if (file.size > MAX_FILE_SIZE) {
       setPhotoError('File must be under 2 MB.')
-      setPhotoFile(null); return
+      setPhotoFile(null)
+      setPhotoPreview(null)
+      return
     }
+
     setPhotoFile(file)
+    setPhotoPreview(URL.createObjectURL(file))
   }
 
   async function submit(e: React.FormEvent) {
@@ -141,6 +152,12 @@ export default function NominatePage({ params }: { params: { id: string } }) {
             Photo <span className="text-gray-600">(optional, JPEG/PNG/WebP, max 2 MB)</span>
           </label>
           <input id="photo" type="file" accept="image/jpeg,image/png,image/webp" onChange={handlePhotoChange} className="text-sm file:mr-4 file:py-2 file:px-4 file:border-0 file:bg-gray-800 file:text-white file:font-bold file:uppercase file:tracking-widest hover:file:bg-gray-700 transition-colors" />
+          {photoPreview && (
+            <div className="mt-4 rounded border border-gray-800 bg-gray-950 p-3">
+              <p className="mb-2 text-[10px] font-bold uppercase tracking-widest text-gray-500">Preview</p>
+              <img src={photoPreview} alt="Selected candidate headshot preview" className="h-32 w-32 object-cover border border-gray-700 bg-black" />
+            </div>
+          )}
           {photoError && <p className="text-red-500 text-sm mt-2">{photoError}</p>}
         </div>
         {error && <p className="text-red-500 text-sm font-bold uppercase tracking-wide">{error}</p>}

@@ -45,9 +45,7 @@ export default async function InstitutionAdminPage() {
             {/* ── Roster Upload ── */}
             <section className="border border-gray-800 p-6 md:p-8 space-y-6 bg-transparent">
               <h2 className="text-xl font-bold uppercase tracking-widest text-gray-300">Roster Upload</h2>
-              <div className="invert grayscale contrast-125">
-                <RosterUploadForm institutionId={profile.institution_id!} />
-              </div>
+              <RosterUploadForm institutionId={profile.institution_id!} />
               {importErrors.length > 0 && (
                 <div className="mt-8 border-t border-gray-800 pt-6">
                   <h3 className="text-xs font-bold uppercase tracking-widest text-red-500 mb-4">Import Errors ({importErrors.length} rows)</h3>
@@ -78,9 +76,7 @@ export default async function InstitutionAdminPage() {
             {/* ── Invite Department Admin ── */}
             <section className="border border-gray-800 p-6 md:p-8 space-y-6 bg-transparent">
               <h2 className="text-xl font-bold uppercase tracking-widest text-gray-300">Invite Admin</h2>
-              <div className="invert grayscale contrast-125">
-                <InviteDeptAdminForm institutionId={profile.institution_id!} />
-              </div>
+              <InviteDeptAdminForm institutionId={profile.institution_id!} />
             </section>
           </div>
 
@@ -88,23 +84,33 @@ export default async function InstitutionAdminPage() {
             {/* ── Create Election ── */}
             <section className="border border-gray-800 p-6 md:p-8 space-y-6 bg-transparent">
               <h2 className="text-xl font-bold uppercase tracking-widest text-gray-300">Create Election</h2>
-              <div className="invert grayscale contrast-125">
-                <CreateElectionForm institutionId={profile.institution_id!} adminId={profile.id} />
-              </div>
+              <CreateElectionForm institutionId={profile.institution_id!} adminId={profile.id} />
             </section>
 
             {/* ── Manage Elections ── */}
             <section className="border border-gray-800 p-6 md:p-8 space-y-6 bg-transparent">
               <h2 className="text-xl font-bold uppercase tracking-widest text-gray-300">Elections ({elections.length})</h2>
-              <div className="invert grayscale contrast-125 overflow-hidden">
+              <div className="overflow-hidden">
                 <ElectionTable elections={elections} />
               </div>
+              {elections.some(e => e.status === 'closed') && (
+                <div className="border-t border-gray-800 pt-4">
+                  <p className="mb-3 text-xs font-bold uppercase tracking-widest text-gray-500">Audit certificates</p>
+                  <div className="flex flex-wrap gap-3">
+                    {elections.filter(e => e.status === 'closed').map(e => (
+                      <a key={e.id} href={`/institution-admin/elections/${e.id}/report`} className="text-xs font-bold uppercase tracking-widest text-green-400 hover:text-green-300">
+                        {e.title} →
+                      </a>
+                    ))}
+                  </div>
+                </div>
+              )}
             </section>
             
             {/* ── Pending Candidates ── */}
             <section className="border border-gray-800 p-6 md:p-8 space-y-6 bg-transparent">
               <h2 className="text-xl font-bold uppercase tracking-widest text-gray-300">Pending Candidates ({pendingCandidates.length})</h2>
-              <div className="invert grayscale contrast-125 overflow-hidden">
+              <div className="overflow-hidden">
                 <CandidateApprovalTable candidates={pendingCandidates} />
               </div>
             </section>
@@ -114,4 +120,3 @@ export default async function InstitutionAdminPage() {
     </main>
   )
 }
-

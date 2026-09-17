@@ -52,27 +52,25 @@ export default async function DeptAdminPage() {
           <div className="space-y-8">
             <section className="border border-gray-800 p-6 md:p-8 space-y-6 bg-transparent">
               <h2 className="text-xl font-bold uppercase tracking-widest text-gray-300">Create Election (dept-scoped)</h2>
-              <div className="invert grayscale contrast-125">
-                <CreateElectionForm
-                  institutionId={profile.institution_id!}
-                  adminId={profile.id}
-                  forceDepartment={profile.department}
-                />
-              </div>
+              <CreateElectionForm
+                institutionId={profile.institution_id!}
+                adminId={profile.id}
+                forceDepartment={profile.department}
+              />
             </section>
           </div>
           
           <div className="space-y-8">
             <section className="border border-gray-800 p-6 md:p-8 space-y-6 bg-transparent">
               <h2 className="text-xl font-bold uppercase tracking-widest text-gray-300">Elections</h2>
-              <div className="invert grayscale contrast-125 overflow-hidden">
+              <div className="overflow-hidden">
                 <ElectionTable elections={(elections as Election[]) ?? []} />
               </div>
             </section>
 
             <section className="border border-gray-800 p-6 md:p-8 space-y-6 bg-transparent">
               <h2 className="text-xl font-bold uppercase tracking-widest text-gray-300">Pending Candidates ({(pendingCandidates ?? []).length})</h2>
-              <div className="invert grayscale contrast-125 overflow-hidden">
+              <div className="overflow-hidden">
                 <CandidateApprovalTable candidates={(pendingCandidates ?? []) as any} />
               </div>
             </section>

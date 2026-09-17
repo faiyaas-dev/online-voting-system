@@ -4,7 +4,6 @@ import { useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import type { RosterImportError } from '@/lib/supabase/types'
 
-// Error reason → human-readable label
 const ERROR_LABELS: Record<string, string> = {
   missing_email: 'Missing email',
   invalid_email_format: 'Invalid email format',
@@ -21,25 +20,64 @@ interface UploadResult {
   errors: number
 }
 
+function parsePreview(text: string) {
+  return text.split(/\r?\n/).filter(Boolean).slice(0, 6).map(line => {
+    const values: string[] = []
+    let value = ''
+    let quoted = false
+    for (let i = 0; i < line.length; i += 1) {
+      const char = line[i]
+      if (char === '"') quoted = !quoted
+      else if (char === ',' && !quoted) {
+        values.push(value.trim())
+        value = ''
+      } else value += char
+    }
+    values.push(value.trim())
+    return values
+  })
+}
+
 export default function RosterUploadForm({ institutionId }: { institutionId: string }) {
   const [file, setFile] = useState<File | null>(null)
+  const [preview, setPreview] = useState<string[][]>([])
+  const [previewError, setPreviewError] = useState('')
+  const [confirmed, setConfirmed] = useState(false)
   const [loading, setLoading] = useState(false)
   const [result, setResult] = useState<UploadResult | null>(null)
   const [uploadError, setUploadError] = useState('')
-  // Full error rows fetched from roster_import_errors after upload
   const [errorRows, setErrorRows] = useState<RosterImportError[]>([])
   const [loadingErrors, setLoadingErrors] = useState(false)
 
+  function handleFileChange(nextFile: File | null) {
+    setFile(nextFile)
+    setPreview([])
+    setPreviewError('')
+    setConfirmed(false)
+    if (!nextFile) return
+
+    const reader = new FileReader()
+    reader.onload = () => {
+      const rows = parsePreview(String(reader.result ?? ''))
+      const headers = rows[0]?.map(header => header.toLowerCase())
+      const required = ['email', 'roll_no', 'department', 'year']
+      const missing = required.filter(column => !headers?.includes(column))
+      if (missing.length > 0) setPreviewError(`Missing required columns: ${missing.join(', ')}`)
+      setPreview(rows)
+    }
+    reader.onerror = () => setPreviewError('Could not read this CSV file.')
+    reader.readAsText(nextFile)
+  }
+
   async function upload(e: React.FormEvent) {
     e.preventDefault()
-    if (!file) return
+    if (!file || !confirmed || previewError) return
     setUploadError('')
     setResult(null)
     setErrorRows([])
     setLoading(true)
 
     const supabase = createClient()
-    // F-13: Use getUser() for auth verification, then get session for access_token
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) { setUploadError('Not authenticated'); setLoading(false); return }
     const { data: { session } } = await supabase.auth.getSession()
@@ -48,26 +86,17 @@ export default function RosterUploadForm({ institutionId }: { institutionId: str
     const form = new FormData()
     form.append('file', file)
     form.append('institution_id', institutionId)
-
-    const res = await fetch(
-      `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/roster-csv-validate`,
-      {
-        method: 'POST',
-        headers: { Authorization: `Bearer ${session.access_token}` },
-        body: form,
-      }
-    )
+    const res = await fetch(`${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/roster-csv-validate`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${session.access_token}` },
+      body: form,
+    })
     const json = await res.json()
     setLoading(false)
 
     if (!res.ok) { setUploadError(json.error ?? 'Upload failed'); return }
-
     setResult({ inserted: json.inserted, errors: json.errors })
-
-    // If there were errors, fetch full rows from roster_import_errors
-    if (json.errors > 0) {
-      await fetchErrors(supabase)
-    }
+    if (json.errors > 0) await fetchErrors(supabase)
   }
 
   async function fetchErrors(supabase: ReturnType<typeof createClient>) {
@@ -82,123 +111,63 @@ export default function RosterUploadForm({ institutionId }: { institutionId: str
     setLoadingErrors(false)
   }
 
-  // Group errors by reason
   const grouped = errorRows.reduce<Record<string, RosterImportError[]>>((acc, row) => {
-    const key = row.error_reason
-    if (!acc[key]) acc[key] = []
-    acc[key].push(row)
+    if (!acc[row.error_reason]) acc[row.error_reason] = []
+    acc[row.error_reason].push(row)
     return acc
   }, {})
 
   function downloadErrorCSV() {
     const headers = ['row_number', 'error_reason', 'email', 'roll_no', 'department', 'year', 'full_name', 'imported_at']
-    const rows = errorRows.map(e => [
-      e.row_number,
-      e.error_reason,
-      e.raw_row.email ?? '',
-      e.raw_row.roll_no ?? '',
-      e.raw_row.department ?? '',
-      e.raw_row.year ?? '',
-      e.raw_row.full_name ?? '',
-      e.imported_at,
-    ])
-    const csv = [headers, ...rows]
-      .map(r => r.map(v => `"${String(v).replace(/"/g, '""')}"`).join(','))
-      .join('\n')
-    const blob = new Blob([csv], { type: 'text/csv' })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = `roster-errors-${new Date().toISOString().slice(0, 10)}.csv`
-    a.click()
+    const rows = errorRows.map(e => [e.row_number, e.error_reason, e.raw_row.email ?? '', e.raw_row.roll_no ?? '', e.raw_row.department ?? '', e.raw_row.year ?? '', e.raw_row.full_name ?? '', e.imported_at])
+    const csv = [headers, ...rows].map(row => row.map(value => `"${String(value).replace(/"/g, '""')}"`).join(',')).join('\n')
+    const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv' }))
+    const link = document.createElement('a')
+    link.href = url
+    link.download = `roster-errors-${new Date().toISOString().slice(0, 10)}.csv`
+    link.click()
     URL.revokeObjectURL(url)
   }
 
   return (
     <div className="flex flex-col gap-4">
-      {/* ── Upload form ── */}
       <form onSubmit={upload} className="flex flex-col gap-3">
         <label htmlFor="csv-file" className="sr-only">CSV File</label>
-        <input
-          id="csv-file"
-          type="file"
-          accept=".csv,text/csv"
-          onChange={e => setFile(e.target.files?.[0] ?? null)}
-          required
-        />
-        <p className="text-xs text-gray-500">
-          Required columns: <code>email, roll_no, department, year, full_name</code> (full_name optional)
-        </p>
-        {uploadError && <p className="text-red-600 text-sm">{uploadError}</p>}
-        {result && (
-          <p className="text-sm">
-            <span className="text-green-700">✓ Inserted: <strong>{result.inserted}</strong></span>
-            {result.errors > 0 && (
-              <span className="text-red-600 ml-3">✗ Errors: <strong>{result.errors}</strong></span>
-            )}
-          </p>
+        <input id="csv-file" type="file" accept=".csv,text/csv" onChange={e => handleFileChange(e.target.files?.[0] ?? null)} required />
+        <p className="text-xs text-gray-500">Required columns: <code>email, roll_no, department, year, full_name</code> (full_name optional)</p>
+        {preview.length > 0 && (
+          <div className="overflow-x-auto border border-gray-700 bg-gray-950 p-3">
+            <p className="mb-2 text-xs font-bold uppercase tracking-widest text-gray-400">Preview: first 5 rows</p>
+            <table className="w-full text-left text-xs">
+              <tbody>
+                {preview.map((row, rowIndex) => (
+                  <tr key={rowIndex} className="border-b border-gray-800 last:border-0">
+                    {row.map((cell, cellIndex) => rowIndex === 0
+                      ? <th key={cellIndex} className="px-2 py-2 text-gray-300">{cell}</th>
+                      : <td key={cellIndex} className="px-2 py-2 text-gray-500">{cell || '—'}</td>)}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            {previewError && <p className="mt-3 text-sm text-red-400">{previewError}</p>}
+            {!previewError && <label className="mt-3 flex items-center gap-2 text-xs text-gray-400"><input type="checkbox" checked={confirmed} onChange={e => setConfirmed(e.target.checked)} /> I reviewed this preview and want to upload it.</label>}
+          </div>
         )}
-        <button
-          type="submit"
-          disabled={loading || !file}
-          className="self-start bg-blue-600 text-white rounded px-4 py-2 text-sm disabled:opacity-50"
-        >
-          {loading ? 'Uploading…' : 'Upload CSV'}
-        </button>
+        {uploadError && <p className="text-red-600 text-sm">{uploadError}</p>}
+        {result && <p className="text-sm"><span className="text-green-400">✓ Inserted: <strong>{result.inserted}</strong></span>{result.errors > 0 && <span className="ml-3 text-red-400">✗ Errors: <strong>{result.errors}</strong></span>}</p>}
+        <button type="submit" disabled={loading || !file || !confirmed || Boolean(previewError)} className="self-start rounded bg-blue-600 px-4 py-2 text-sm text-white disabled:opacity-50">{loading ? 'Uploading…' : 'Confirm and upload CSV'}</button>
       </form>
 
-      {/* ── Error report ── */}
       {loadingErrors && <p className="text-sm text-gray-500">Loading error details…</p>}
-
       {errorRows.length > 0 && (
-        <div className="border border-red-200 rounded p-4 bg-red-50">
-          <div className="flex justify-between items-center mb-3">
-            <h3 className="text-sm font-semibold text-red-800">
-              Import Errors — {errorRows.length} row{errorRows.length !== 1 ? 's' : ''}
-            </h3>
-            <button
-              type="button"
-              onClick={downloadErrorCSV}
-              className="text-xs text-blue-700 border border-blue-300 rounded px-2 py-1 hover:bg-blue-50"
-            >
-              ↓ Download error report
-            </button>
-          </div>
-
-          {/* Grouped by error type */}
-          <div className="flex flex-col gap-4">
-            {Object.entries(grouped).map(([reason, rows]) => (
-              <div key={reason}>
-                <p className="text-xs font-semibold text-red-700 mb-1 uppercase tracking-wide">
-                  {ERROR_LABELS[reason] ?? reason} ({rows.length})
-                </p>
-                <div className="overflow-x-auto">
-                  <table className="w-full text-xs border-collapse bg-white">
-                    <thead>
-                      <tr className="border-b bg-gray-50 text-left">
-                        <th className="py-1 px-2 text-gray-600">Row</th>
-                        <th className="py-1 px-2 text-gray-600">Email</th>
-                        <th className="py-1 px-2 text-gray-600">Roll No</th>
-                        <th className="py-1 px-2 text-gray-600">Dept</th>
-                        <th className="py-1 px-2 text-gray-600">Year</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {rows.map(r => (
-                        <tr key={r.id} className="border-b hover:bg-gray-50">
-                          <td className="py-1 px-2 font-mono">{r.row_number}</td>
-                          <td className="py-1 px-2">{r.raw_row.email ?? <span className="text-gray-400 italic">—</span>}</td>
-                          <td className="py-1 px-2">{r.raw_row.roll_no ?? <span className="text-gray-400 italic">—</span>}</td>
-                          <td className="py-1 px-2">{r.raw_row.department ?? <span className="text-gray-400 italic">—</span>}</td>
-                          <td className="py-1 px-2">{r.raw_row.year ?? <span className="text-gray-400 italic">—</span>}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            ))}
-          </div>
+        <div className="rounded border border-red-900 bg-red-950/30 p-4">
+          <div className="mb-3 flex items-center justify-between"><h3 className="text-sm font-semibold text-red-300">Import Errors — {errorRows.length} rows</h3><button type="button" onClick={downloadErrorCSV} className="rounded border border-blue-700 px-2 py-1 text-xs text-blue-300">↓ Download error report</button></div>
+          {Object.entries(grouped).map(([reason, rows]) => (
+            <div key={reason} className="mb-4 overflow-x-auto">
+              <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-red-300">{ERROR_LABELS[reason] ?? reason} ({rows.length})</p>
+              <table className="w-full text-xs"><tbody>{rows.map(row => <tr key={row.id} className="border-b border-red-900"><td className="px-2 py-1">{row.row_number}</td><td className="px-2 py-1">{row.raw_row.email ?? '—'}</td><td className="px-2 py-1">{row.raw_row.roll_no ?? '—'}</td><td className="px-2 py-1">{row.raw_row.department ?? '—'}</td><td className="px-2 py-1">{row.raw_row.year ?? '—'}</td></tr>)}</tbody></table>
+            </div>
+          ))}
         </div>
       )}
     </div>

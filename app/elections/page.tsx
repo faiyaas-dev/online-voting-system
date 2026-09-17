@@ -2,6 +2,7 @@ import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import type { Election, Profile } from '@/lib/supabase/types'
+import LiveCountdown from '@/components/LiveCountdown'
 
 function statusBadge(status: Election['status']) {
   const map: Record<string, string> = {
@@ -53,6 +54,11 @@ export default async function ElectionsPage() {
                     <div className="flex flex-col gap-1 text-xs uppercase tracking-widest text-gray-400 font-bold">
                       <span>{e.scope_department ? `Dept: ${e.scope_department}` : 'Institution-wide'}{e.scope_year ? ` · Year ${e.scope_year}` : ''}</span>
                       <span>{new Date(e.opens_at).toLocaleDateString()} — {new Date(e.closes_at).toLocaleDateString()}</span>
+                      {e.status === 'voting_open' && (
+                        <span className="text-green-400">
+                          <LiveCountdown closesAt={e.closes_at} />
+                        </span>
+                      )}
                     </div>
                   </div>
                   <span className={`text-[10px] px-3 py-1 uppercase font-bold tracking-widest border ${statusBadge(e.status)}`}>
@@ -87,4 +93,3 @@ export default async function ElectionsPage() {
     </main>
   )
 }
-

@@ -39,7 +39,24 @@ export default async function PlatformAdminPage() {
         )}
 
         {!error && metrics && metrics.length > 0 && (
-          <div className="overflow-x-auto border border-gray-800 p-1">
+          <div className="space-y-8">
+            <section className="border border-gray-800 p-6">
+              <h2 className="mb-6 text-xs font-bold uppercase tracking-widest text-gray-400">Participation by institution</h2>
+              <div className="space-y-5">
+                {(metrics as PlatformMetric[]).map(m => (
+                  <div key={m.institution_id}>
+                    <div className="mb-2 flex justify-between text-xs">
+                      <span className="font-bold">{m.institution_name}</span>
+                      <span className="font-mono text-green-400">{m.participation_pct != null ? `${m.participation_pct}%` : '—'}</span>
+                    </div>
+                    <div className="h-2 overflow-hidden bg-gray-800" role="progressbar" aria-label={`${m.institution_name} participation`} aria-valuenow={Number(m.participation_pct ?? 0)} aria-valuemin={0} aria-valuemax={100}>
+                      <div className="h-full bg-green-500 transition-all" style={{ width: `${Math.min(100, Math.max(0, Number(m.participation_pct ?? 0)))}%` }} />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </section>
+            <div className="overflow-x-auto border border-gray-800 p-1">
             <table className="w-full text-sm font-mono text-left whitespace-nowrap">
               <thead className="bg-gray-900 text-gray-400 uppercase tracking-widest text-xs">
                 <tr>
@@ -68,6 +85,7 @@ export default async function PlatformAdminPage() {
                 ))}
               </tbody>
             </table>
+            </div>
           </div>
         )}
       </div>

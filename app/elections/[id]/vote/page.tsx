@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import Link from 'next/link'
 import type { Candidate } from '@/lib/supabase/types'
+import LiveCountdown from '@/components/LiveCountdown'
 
 export default function VotePage({ params }: { params: { id: string } }) {
   const [supabase] = useState(() => createClient())
@@ -98,6 +99,9 @@ export default function VotePage({ params }: { params: { id: string } }) {
     <main className="max-w-lg mx-auto p-6">
       <Link href={`/elections/${electionId}/candidates`} className="text-sm font-bold uppercase tracking-widest text-gray-400 hover:text-white border-b border-transparent hover:border-white pb-1 transition-colors mb-8 inline-block">← Candidates</Link>
       <h1 className="text-2xl font-extrabold uppercase tracking-widest mb-8">Vote: {election.title}</h1>
+      <p className="mb-8 text-xs font-bold uppercase tracking-widest text-green-400">
+        <LiveCountdown closesAt={election.closes_at} />
+      </p>
       <form onSubmit={castVote} className="flex flex-col gap-8">
         <fieldset>
           <legend className="text-sm font-bold uppercase tracking-widest text-gray-400 mb-4">Select one candidate</legend>
