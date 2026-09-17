@@ -9,7 +9,13 @@ alter table public.elections
 
 -- 2. Add pg_cron job to auto-close expired elections every 5 minutes
 -- Unschedule first to ensure idempotency if this migration is re-run
-select cron.unschedule('auto_close_expired_elections');
+do $$
+begin
+  if exists (select 1 from cron.job where jobname = 'auto_close_expired_elections') then
+    perform cron.unschedule('auto_close_expired_elections');
+  end if;
+end;
+$$;
 
 select cron.schedule(
   'auto_close_expired_elections',
