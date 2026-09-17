@@ -37,12 +37,17 @@ begin
           and (e.scope_year is null or r.year = e.scope_year)
       ), 0) * 100, 2
     ),
-    'results', coalesce((
-      select jsonb_agg(jsonb_build_object(
-        'candidate_id', c.id,
-        'candidate_name', coalesce(p.full_name, 'Unknown'),
-        'vote_count', (select count(*) from votes v where v.candidate_id = c.id and v.election_id = e.id)
-      ) order by (select count(*) from votes v2 where v2.candidate_id = c.id and v2.election_id = e.id) desc, c.id),
+    'results', coalesce(
+      (
+        select jsonb_agg(jsonb_build_object(
+          'candidate_id', c.id,
+          'candidate_name', coalesce(p.full_name, 'Unknown'),
+          'vote_count', (select count(*) from votes v where v.candidate_id = c.id and v.election_id = e.id)
+        ) order by (select count(*) from votes v2 where v2.candidate_id = c.id and v2.election_id = e.id) desc, c.id)
+        from candidates c
+        left join profiles p on p.id = c.user_id
+        where c.election_id = e.id
+      ),
       '[]'::jsonb
     )
   ) into v_report
