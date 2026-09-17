@@ -44,8 +44,8 @@ The deployment workflow is [`.github/workflows/deploy.yml`](./.github/workflows/
 2. Runs the pinned Supabase CLI.
 3. Validates that `SUPABASE_PROJECT_ID` is exactly 20 lowercase letters/digits.
 4. Runs `supabase link --password "$SUPABASE_DB_PASSWORD"` to configure the IPv4 pooler connection.
-5. Runs `supabase migration list`.
-6. Runs `supabase db push`.
+5. Runs `supabase migration list --project-ref "$SUPABASE_PROJECT_ID" --password "$SUPABASE_DB_PASSWORD"`.
+6. Runs `supabase db push --project-ref "$SUPABASE_PROJECT_ID" --password "$SUPABASE_DB_PASSWORD"`.
 
 The job uses the GitHub `production` environment and expects these secrets:
 
@@ -161,7 +161,7 @@ IPv6 is not supported on your current network
 Run supabase link --project-ref *** to setup IPv4 connection.
 ```
 
-The GitHub-hosted runner cannot reach the project's direct IPv6 database hostname. The CLI can use the project's IPv4 pooler when the database password is supplied explicitly during linking. The previous workflow exposed the password as an environment variable but did not pass it to the `link` command.
+The GitHub-hosted runner cannot reach the project's direct IPv6 database hostname. The CLI can use the project's IPv4 pooler when the database password is supplied explicitly to each database command. The first workflow revision passed the password only to `link`; the current revision passes both the project reference and password to `link`, `migration list`, and `db push`.
 
 ### Evidence D: direct migration access succeeds locally
 
@@ -317,7 +317,7 @@ Push Migrations             ✓
 
 ## Current conclusion
 
-The project is healthy enough to list through the Management API, link successfully, and connect directly to PostgreSQL from the local environment. CI and Netlify are functioning. The migration deployment was blocked because GitHub Actions cannot use the project's direct IPv6 database host. The workflow now passes the database password explicitly to `supabase link`, which is the documented way to configure the IPv4 pooler in non-interactive CI.
+The project is healthy enough to list through the Management API, link successfully, and connect directly to PostgreSQL from the local environment. CI and Netlify are functioning. The migration deployment was blocked because GitHub Actions cannot use the project's direct IPv6 database host. The workflow now passes the project reference and database password explicitly to `link`, `migration list`, and `db push`, avoiding reliance on persisted link metadata in the ephemeral runner.
 
 The remaining user action is to rerun the workflow. If it then reports PostgreSQL authentication failure, correct `SUPABASE_DB_PASSWORD`; otherwise no token rotation is required.
 
