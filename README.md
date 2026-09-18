@@ -8,6 +8,7 @@ The system guarantees election integrity by enforcing tenant boundaries, voter e
 
 ## Table of Contents
 
+- [Documentation Index](#documentation-index)
 - [Overview & Why This Exists](#overview--why-this-exists)
 - [Locked Architectural Decisions](#locked-architectural-decisions)
 - [Administrative & User Role Hierarchy](#administrative--user-role-hierarchy)
@@ -28,6 +29,22 @@ The system guarantees election integrity by enforcing tenant boundaries, voter e
   - [Troubleshooting Missing or Rejected Votes](#troubleshooting-missing-or-rejected-votes)
 - [OpenSpec Living Specifications](#openspec-living-specifications)
 - [Agent Governance & Developer Directives](#agent-governance--developer-directives)
+
+---
+
+## Documentation Index
+
+Explore the comprehensive documentation suite for technical details, operations, and developer guides:
+
+| Document | Purpose & Audience |
+| :--- | :--- |
+| 🏗️ [**System Architecture & Security Model**](file:///docs/ARCHITECTURE.md) | Multi-tenant database schema, PostgreSQL RLS policies, SHA-256 integrity hashing, and data flow. |
+| 🔌 [**API & RPC Reference**](file:///docs/API_REFERENCE.md) | Full technical specification for all PostgreSQL Security Definer RPCs, parameters, responses, and errors. |
+| 🏛️ [**Administrator Operations Guide**](file:///docs/ADMIN_GUIDE.md) | Manual for Institution & Department Admins: CSV roster ingestion, election creation, candidate reviews, audit certificates. |
+| 🎓 [**Student Voter & Candidate Handbook**](file:///docs/VOTER_GUIDE.md) | Guide for student voters and nominees: passwordless OTP sign-in, ballot casting in <60s, manifesto submission. |
+| 🚀 [**Deployment & Operations Runbook**](file:///docs/DEPLOYMENT_AND_OPERATIONS.md) | DevOps guide: Supabase migrations, Netlify hosting, CI/CD quality gates, and disaster recovery. |
+| 🗺️ [**End-to-End Project Flow**](file:///docs/project-flow.md) | Complete visual Mermaid architecture diagram and security boundaries for all 5 user tiers. |
+| 🤝 [**Contributing Guidelines**](file:///CONTRIBUTING.md) | Local development setup, OpenSpec change proposal workflow, and code style standards. |
 
 ---
 
