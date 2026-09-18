@@ -33,6 +33,41 @@ export default async function ElectionsPage() {
     .select('*')
     .order('opens_at', { ascending: false })
 
+  // Compute turnout for closed elections via RPC
+  const turnoutMap: Record<string, string> = {}
+  const closedElections = (elections ?? []).filter((e: Election) => e.status === 'closed')
+
+  if (closedElections.length > 0) {
+    await Promise.all(
+      closedElections.map(async (e: Election) => {
+        const { data: results } = await supabase.rpc('get_election_results', { p_election_id: e.id })
+        const votesCast = (results ?? []).reduce((sum: number, r: { vote_count: number | string }) => sum + Number(r.vote_count), 0)
+
+        let voterQuery = supabase
+          .from('profiles')
+          .select('id', { count: 'exact', head: true })
+          .eq('role', 'voter')
+
+        if (profile.institution_id) {
+          voterQuery = voterQuery.eq('institution_id', profile.institution_id)
+        }
+        if (e.scope_department) {
+          voterQuery = voterQuery.eq('department', e.scope_department)
+        }
+        if (e.scope_year) {
+          voterQuery = voterQuery.eq('year', e.scope_year)
+        }
+        const { count: eligibleCount } = await voterQuery
+        if (eligibleCount && eligibleCount > 0) {
+          const pct = Math.min(100, Math.round((votesCast / eligibleCount) * 100))
+          turnoutMap[e.id] = `${pct}% voted`
+        } else {
+          turnoutMap[e.id] = `${votesCast} ${votesCast === 1 ? 'vote' : 'votes'}`
+        }
+      })
+    )
+  }
+
   return (
     <main className="min-h-screen bg-black text-white p-6 md:p-12">
       <div className="max-w-4xl mx-auto space-y-12">
@@ -66,9 +101,16 @@ export default async function ElectionsPage() {
                       )}
                     </div>
                   </div>
-                  <span className={`text-[10px] px-3 py-1 uppercase font-bold tracking-widest border ${statusBadge(e.status)}`}>
-                    {e.status.replace('_', ' ')}
-                  </span>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className={`text-[10px] px-3 py-1 uppercase font-bold tracking-widest border ${statusBadge(e.status)}`}>
+                      {e.status.replace('_', ' ')}
+                    </span>
+                    {e.status === 'closed' && turnoutMap[e.id] && (
+                      <span className="text-[10px] px-3 py-1 uppercase font-bold tracking-widest border border-gray-700 text-gray-300">
+                        {turnoutMap[e.id]}
+                      </span>
+                    )}
+                  </div>
                 </div>
                 <div className="mt-8 flex flex-wrap gap-3">
                   <Link href={`/elections/${e.id}/candidates`} className="inline-flex items-center min-h-[44px] px-4 py-2 text-[11px] font-bold uppercase tracking-widest text-white border border-gray-700 hover:border-white transition-colors">

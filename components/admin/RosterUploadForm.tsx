@@ -2,8 +2,13 @@
 
 import { useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import { parseCSV, analyzeRosterCSV } from '@/lib/csv'
+import { parseCSV, analyzeRosterCSV, diffFixedRows, normalizeEmail, type FixedRowsDiff } from '@/lib/csv'
 import RosterImportErrors from '@/components/admin/RosterImportErrors'
+
+// Cap for the baseline fetch backing the re-upload diff (display stays
+// paginated in RosterImportErrors; this is diff input only).
+const BASELINE_FETCH_CAP = 2000
+const BASELINE_PAGE_SIZE = 500
 
 interface UploadResult {
   inserted: number
@@ -26,6 +31,52 @@ export default function RosterUploadForm({ institutionId }: { institutionId: str
   const [result, setResult] = useState<UploadResult | null>(null)
   const [uploadError, setUploadError] = useState('')
   const [uploadCount, setUploadCount] = useState(0)
+  // Re-upload loop (P2-2): baseline = normalized emails recorded as failed
+  // by the latest upload; a corrected file is diffed against it client-side
+  // ("N fixed, M remaining") before the admin commits to re-uploading.
+  const [baselineEmails, setBaselineEmails] = useState<string[]>([])
+  const [baselineLoading, setBaselineLoading] = useState(false)
+  const [recheckDiff, setRecheckDiff] = useState<FixedRowsDiff | null>(null)
+  const [recheckFileName, setRecheckFileName] = useState('')
+  const [recheckFile, setRecheckFile] = useState<File | null>(null)
+
+  async function fetchBaselineEmails() {
+    setBaselineLoading(true)
+    try {
+      const supabase = createClient()
+      const emails: string[] = []
+      for (let offset = 0; offset < BASELINE_FETCH_CAP; offset += BASELINE_PAGE_SIZE) {
+        const { data, error } = await supabase
+          .from('roster_import_errors')
+          .select('raw_row')
+          .eq('institution_id', institutionId)
+          .order('imported_at', { ascending: false })
+          .range(offset, offset + BASELINE_PAGE_SIZE - 1)
+        if (error || !data || data.length === 0) break
+        for (const row of data) {
+          const email = normalizeEmail((row.raw_row as Record<string, string> | null)?.email)
+          if (email !== '') emails.push(email)
+        }
+        if (data.length < BASELINE_PAGE_SIZE) break
+      }
+      setBaselineEmails(Array.from(new Set(emails)))
+    } finally {
+      setBaselineLoading(false)
+    }
+  }
+
+  function handleRecheckFile(nextFile: File | null) {
+    setRecheckDiff(null)
+    setRecheckFile(nextFile)
+    setRecheckFileName(nextFile?.name ?? '')
+    if (!nextFile) return
+    const reader = new FileReader()
+    reader.onload = () => {
+      setRecheckDiff(diffFixedRows(baselineEmails, String(reader.result ?? '')))
+    }
+    reader.onerror = () => setRecheckFileName('')
+    reader.readAsText(nextFile)
+  }
 
   function handleFileChange(nextFile: File | null) {
     setFile(nextFile)
@@ -83,6 +134,12 @@ export default function RosterUploadForm({ institutionId }: { institutionId: str
     // Refresh the unified paginated error browser below (single source of
     // truth — the form no longer keeps its own 500-row error copy).
     setUploadCount(count => count + 1)
+    // Reset the re-upload loop and snapshot the new failure baseline.
+    setRecheckDiff(null)
+    setRecheckFile(null)
+    setRecheckFileName('')
+    if (json.errors > 0) void fetchBaselineEmails()
+    else setBaselineEmails([])
   }
 
   return (
@@ -127,6 +184,51 @@ export default function RosterUploadForm({ institutionId }: { institutionId: str
 
       {result && result.errors > 0 && (
         <RosterImportErrors institutionId={institutionId} refreshKey={uploadCount} title="Import Errors — this upload" />
+      )}
+
+      {result && result.errors > 0 && (
+        <div className="rounded border border-gray-700 bg-gray-950 p-4">
+          <h3 className="text-sm font-semibold text-gray-200">Re-upload fixed rows</h3>
+          <p className="mt-1 text-xs text-gray-500">
+            Fix the failed rows in your CSV, then pre-check the corrected file here:
+            we diff it against the {baselineEmails.length} recorded failure{baselineEmails.length === 1 ? '' : 's'} and report fixed vs remaining.
+            Pre-check only — the upload result stays the final truth (rows already in the roster re-fail server-side).
+          </p>
+          {baselineLoading && <p className="mt-2 text-xs text-gray-500">Loading failure baseline…</p>}
+          <label htmlFor="csv-recheck" className="sr-only">Corrected CSV file for pre-check</label>
+          <input
+            id="csv-recheck"
+            type="file"
+            accept=".csv,text/csv"
+            disabled={baselineLoading || baselineEmails.length === 0}
+            onChange={e => handleRecheckFile(e.target.files?.[0] ?? null)}
+            className="mt-3 text-sm text-gray-300"
+          />
+          {recheckDiff && (
+            <div className="mt-3 border-t border-gray-800 pt-3">
+              <p className="text-sm">
+                <span className="text-green-400">✓ Fixed: <strong>{recheckDiff.fixed}</strong></span>
+                <span className="ml-3 text-red-400">✗ Remaining: <strong>{recheckDiff.remaining}</strong></span>
+                <span className="ml-3 text-gray-500">of {recheckDiff.totalBaseline} previously failing</span>
+              </p>
+              {recheckDiff.remainingEmails.length > 0 && (
+                <p className="mt-1 text-xs text-gray-500">
+                  Still failing or absent: {recheckDiff.remainingEmails.slice(0, 20).join(', ')}
+                  {recheckDiff.remainingEmails.length > 20 && ` (+${recheckDiff.remainingEmails.length - 20} more)`}
+                </p>
+              )}
+              {recheckFile && (
+                <button
+                  type="button"
+                  onClick={() => handleFileChange(recheckFile)}
+                  className="mt-3 min-h-[44px] rounded border border-gray-700 px-4 py-2 text-sm text-white hover:bg-gray-800 transition-colors"
+                >
+                  Use “{recheckFileName}” for upload ↑
+                </button>
+              )}
+            </div>
+          )}
+        </div>
       )}
     </div>
   )

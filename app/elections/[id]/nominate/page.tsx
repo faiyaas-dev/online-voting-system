@@ -49,7 +49,7 @@ export default function NominatePage({ params }: { params: { id: string } }) {
     load()
   }, [electionId, router, supabase])
 
-  function handlePhotoChange(e: React.ChangeEvent<HTMLInputElement>) {
+  async function handlePhotoChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0] ?? null
     setPhotoError('')
     if (!file) {
@@ -63,15 +63,68 @@ export default function NominatePage({ params }: { params: { id: string } }) {
       setPhotoPreview(null)
       return
     }
-    if (file.size > MAX_FILE_SIZE) {
-      setPhotoError('File must be under 2 MB.')
-      setPhotoFile(null)
-      setPhotoPreview(null)
-      return
-    }
 
-    setPhotoFile(file)
-    setPhotoPreview(URL.createObjectURL(file))
+    try {
+      const objectUrl = URL.createObjectURL(file)
+      const img = document.createElement('img')
+      img.src = objectUrl
+
+      await new Promise<void>((resolve, reject) => {
+        img.onload = () => resolve()
+        img.onerror = () => reject(new Error('Failed to load image'))
+      })
+
+      const MAX_DIM = 1024
+      let width = img.naturalWidth || img.width || 1
+      let height = img.naturalHeight || img.height || 1
+
+      if (width > MAX_DIM || height > MAX_DIM) {
+        if (width >= height) {
+          height = Math.round((height * MAX_DIM) / width)
+          width = MAX_DIM
+        } else {
+          width = Math.round((width * MAX_DIM) / height)
+          height = MAX_DIM
+        }
+      }
+
+      const canvas = document.createElement('canvas')
+      canvas.width = width
+      canvas.height = height
+      const ctx = canvas.getContext('2d')
+      if (!ctx) throw new Error('Canvas 2D context not available')
+
+      ctx.drawImage(img, 0, 0, width, height)
+      URL.revokeObjectURL(objectUrl)
+
+      const blob = await new Promise<Blob | null>((resolve) =>
+        canvas.toBlob(resolve, 'image/jpeg', 0.85)
+      )
+
+      if (!blob) throw new Error('Canvas compression failed')
+
+      if (blob.size > MAX_FILE_SIZE) {
+        setPhotoError('File must be under 2 MB.')
+        setPhotoFile(null)
+        setPhotoPreview(null)
+        return
+      }
+
+      const baseName = file.name.replace(/\.[^/.]+$/, '')
+      const compressedFile = new File([blob], `${baseName}.jpg`, { type: 'image/jpeg' })
+
+      setPhotoFile(compressedFile)
+      setPhotoPreview(URL.createObjectURL(compressedFile))
+    } catch {
+      if (file.size > MAX_FILE_SIZE) {
+        setPhotoError('File must be under 2 MB.')
+        setPhotoFile(null)
+        setPhotoPreview(null)
+        return
+      }
+      setPhotoFile(file)
+      setPhotoPreview(URL.createObjectURL(file))
+    }
   }
 
   async function submit(e: React.FormEvent) {
@@ -127,7 +180,8 @@ export default function NominatePage({ params }: { params: { id: string } }) {
   if (success) return (
     <main className="p-6 max-w-lg mx-auto">
       <p className="text-green-500 font-bold uppercase tracking-widest text-sm mb-4">Nomination submitted! It is pending admin approval.</p>
-      <p className="text-sm text-gray-400 mb-4">You can check your pending card on the candidates page — it is visible to you now and to voters once approved.</p>
+      <p className="text-sm text-gray-400 mb-2">You can check your pending card on the candidates page — it is visible to you now and to voters once approved.</p>
+      <p className="text-xs text-gray-500 mb-6">Nominations are usually reviewed within 24 hours by election administrators.</p>
       <Link href={`/elections/${electionId}/candidates`} className="text-sm font-bold uppercase tracking-widest text-gray-400 border-b border-transparent hover:border-white hover:text-white pb-1 transition-colors mt-2 inline-block">← View candidates</Link>
     </main>
   )

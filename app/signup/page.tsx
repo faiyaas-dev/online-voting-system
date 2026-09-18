@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 
@@ -18,15 +18,44 @@ export default function SignupPage() {
   const [otp, setOtp] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
+  const [slugTaken, setSlugTaken] = useState(false)
+  const [slugAvailability, setSlugAvailability] = useState<'available' | 'taken' | null>(null)
+  const slugTimeoutRef = useRef<NodeJS.Timeout | null>(null)
 
   function toSlug(val: string) {
     return val.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
   }
 
+  // Debounced slug availability check — does NOT cost an OTP round-trip.
+  // get_public_institutions() takes no arguments (see migration
+  // 20260918000001): fetch the public directory once and match the slug
+  // client-side instead of passing a server-side filter that does not exist.
+  async function checkSlugAvailability(value: string) {
+    const trimmed = value.trim().toLowerCase()
+    if (!trimmed) { setSlugAvailability(null); setSlugTaken(false); return }
+    try {
+      const { data, error } = await supabase.rpc('get_public_institutions')
+      if (error || !Array.isArray(data)) { setSlugAvailability(null); setSlugTaken(false); return }
+      const exists = data.some((o: { slug: string }) => o.slug.toLowerCase() === trimmed)
+      setSlugAvailability(exists ? 'taken' : 'available')
+      setSlugTaken(exists)
+    } catch {
+      setSlugAvailability(null)
+      setSlugTaken(false)
+    }
+  }
+
+  useEffect(() => {
+    if (slugTimeoutRef.current) clearTimeout(slugTimeoutRef.current)
+    slugTimeoutRef.current = setTimeout(() => { void checkSlugAvailability(slug) }, 500)
+    return () => { if (slugTimeoutRef.current) clearTimeout(slugTimeoutRef.current) }
+  }, [slug])
+
   async function sendOtp(e: React.FormEvent) {
     e.preventDefault()
     setError('')
     if (!institutionName.trim() || !slug.trim()) { setError('Institution name and slug required'); return }
+    if (slugTaken) { setError('This slug is already taken. Please choose another.'); return }
     setLoading(true)
     const { error } = await supabase.auth.signInWithOtp({ email: adminEmail, options: { shouldCreateUser: true } })
     setLoading(false)
@@ -81,11 +110,23 @@ export default function SignupPage() {
                 type="text"
                 required
                 value={slug}
-                onChange={e => setSlug(e.target.value)}
+                onChange={e => {
+                  setSlug(e.target.value)
+                  // Debounced availability check — no OTP round-trip
+                  if (slugTimeoutRef.current) clearTimeout(slugTimeoutRef.current)
+                  const next = e.target.value
+                  slugTimeoutRef.current = setTimeout(() => { void checkSlugAvailability(next) }, 500)
+                }}
                 className="bg-transparent border-b border-gray-700 focus:border-white px-0 py-3 text-sm font-mono outline-none transition-colors"
                 placeholder="state-university"
               />
-              <p className="text-xs text-gray-500">3–50 chars, lowercase letters, numbers, hyphens. If taken, you will be asked to pick another after verifying your OTP.</p>
+              <p className="text-xs text-gray-500">3–50 chars, lowercase letters, numbers, hyphens.</p>
+              {slugAvailability === 'taken' && (
+                <p className="mt-1 text-xs text-red-400">This slug is already taken. Please choose another.</p>
+              )}
+              {slugAvailability === 'available' && (
+                <p className="mt-1 text-xs text-green-400">This slug is available.</p>
+              )}
             </div>
             <div className="flex flex-col gap-2">
               <label htmlFor="adminEmail" className="text-xs font-bold uppercase tracking-widest text-gray-400">Admin Email</label>

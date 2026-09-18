@@ -3,6 +3,15 @@ import { redirect } from 'next/navigation'
 
 import type { Profile, PlatformMetric } from '@/lib/supabase/types'
 
+function toNum(v: number | string | null | undefined): number {
+  return Number(v ?? 0)
+}
+
+function csvEscape(v: string | number | null | undefined): string {
+  const s = v == null ? '' : String(v)
+  return /[",\r\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s
+}
+
 export default async function PlatformAdminPage() {
   const supabase = createClient()
   const { data: { user } } = await supabase.auth.getUser()
@@ -19,6 +28,35 @@ export default async function PlatformAdminPage() {
   // Call get_platform_metrics RPC — aggregates only, no PII
   const { data: metrics, error } = await supabase.rpc('get_platform_metrics')
 
+  // Aggregate-only rows: "Nominating / draft" is derived (total − voting − closed),
+  // i.e. nomination_open + draft. No new RPC columns, no PII.
+  const rows = ((metrics ?? []) as PlatformMetric[]).map((m) => {
+    const total = toNum(m.total_elections)
+    const votingNow = toNum(m.active_elections)
+    const closed = toNum(m.closed_elections)
+    const nominating = Math.max(0, total - votingNow - closed)
+    return { m, total, votingNow, closed, nominating }
+  })
+
+  const csvDate = new Date().toISOString().slice(0, 10)
+  const csvFileName = `platform-metrics-${csvDate}.csv`
+  const csvLines = [
+    'institution,elections,voting_now,nominating_draft,closed,roster,votes,participation_pct',
+    ...rows.map(({ m, total, votingNow, closed, nominating }) =>
+      [
+        csvEscape(m.institution_name),
+        total,
+        votingNow,
+        nominating,
+        closed,
+        toNum(m.total_voters),
+        toNum(m.total_votes_cast),
+        m.participation_pct ?? '',
+      ].join(','),
+    ),
+  ]
+  const csvHref = `data:text/csv;charset=utf-8,${encodeURIComponent(csvLines.join('\r\n'))}`
+
   return (
     <main className="min-h-screen bg-black text-white p-6 md:p-12">
       <div className="max-w-7xl mx-auto space-y-12">
@@ -27,7 +65,16 @@ export default async function PlatformAdminPage() {
             <h1 className="text-4xl font-extrabold uppercase tracking-widest">Platform Admin</h1>
             <p className="text-xs font-bold tracking-widest text-gray-500 uppercase mt-2">Aggregate Metrics · Cross-Institution View</p>
           </div>
-          
+          {!error && rows.length > 0 && (
+            <a
+              href={csvHref}
+              download={csvFileName}
+              aria-label="Download aggregate metrics as CSV"
+              className="inline-flex min-h-[44px] min-w-[44px] items-center justify-center border border-gray-700 px-5 text-xs font-bold uppercase tracking-widest text-gray-200 transition-colors hover:bg-gray-900"
+            >
+              Export CSV
+            </a>
+          )}
         </header>
 
         {error && <p className="text-red-500 font-bold uppercase tracking-widest">{error.message}</p>}
@@ -57,25 +104,27 @@ export default async function PlatformAdminPage() {
               </div>
             </section>
             <div className="overflow-x-auto border border-gray-800 p-1">
-            <table className="w-full text-sm font-mono text-left whitespace-nowrap">
+            <table className="w-full text-sm font-mono text-left whitespace-nowrap" aria-label="Participation by institution">
               <thead className="bg-gray-900 text-gray-400 uppercase tracking-widest text-xs">
                 <tr>
-                  <th className="py-4 px-4 font-normal">Institution</th>
-                  <th className="py-4 px-4 font-normal text-right">Elections</th>
-                  <th className="py-4 px-4 font-normal text-right">Active</th>
-                  <th className="py-4 px-4 font-normal text-right">Closed</th>
-                  <th className="py-4 px-4 font-normal text-right">Roster</th>
-                  <th className="py-4 px-4 font-normal text-right">Votes</th>
-                  <th className="py-4 px-4 font-normal text-right">Participation</th>
+                  <th scope="col" className="py-4 px-4 font-normal">Institution</th>
+                  <th scope="col" className="py-4 px-4 font-normal text-right">Elections</th>
+                  <th scope="col" className="py-4 px-4 font-normal text-right">Voting now</th>
+                  <th scope="col" className="py-4 px-4 font-normal text-right">Nominating / draft</th>
+                  <th scope="col" className="py-4 px-4 font-normal text-right">Closed</th>
+                  <th scope="col" className="py-4 px-4 font-normal text-right">Roster</th>
+                  <th scope="col" className="py-4 px-4 font-normal text-right">Votes</th>
+                  <th scope="col" className="py-4 px-4 font-normal text-right">Participation</th>
                 </tr>
               </thead>
               <tbody className="text-gray-300">
-                {(metrics as PlatformMetric[]).map(m => (
+                {rows.map(({ m, total, votingNow, closed, nominating }) => (
                   <tr key={m.institution_id} className="border-b border-gray-800 hover:bg-gray-900 transition-colors">
                     <td className="py-4 px-4 font-bold text-white">{m.institution_name}</td>
-                    <td className="py-4 px-4 text-right">{m.total_elections}</td>
-                    <td className="py-4 px-4 text-right">{m.active_elections}</td>
-                    <td className="py-4 px-4 text-right">{m.closed_elections}</td>
+                    <td className="py-4 px-4 text-right">{total}</td>
+                    <td className="py-4 px-4 text-right">{votingNow}</td>
+                    <td className="py-4 px-4 text-right">{nominating}</td>
+                    <td className="py-4 px-4 text-right">{closed}</td>
                     <td className="py-4 px-4 text-right text-gray-400">{m.total_voters}</td>
                     <td className="py-4 px-4 text-right text-gray-400">{m.total_votes_cast}</td>
                     <td className="py-4 px-4 text-right text-green-500 font-bold">
@@ -88,7 +137,7 @@ export default async function PlatformAdminPage() {
             </div>
             <p className="text-xs text-gray-500">
               Participation = votes cast ÷ (roster size × elections in voting or closed status), averaged across elections.
-              It is not per-election turnout. “Active” counts elections in voting-open status only — nominations and drafts are excluded.
+              It is not per-election turnout. “Voting now” counts voting-open elections; “Nominating / draft” = total − voting − closed (nomination_open + draft).
             </p>
           </div>
         )}

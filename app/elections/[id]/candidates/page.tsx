@@ -27,49 +27,54 @@ export default async function CandidatesPage({ params }: { params: { id: string 
     .order('created_at')
 
   return (
-    <main className="max-w-3xl mx-auto p-6">
-      <Link href="/elections" className="text-sm text-blue-600 underline mb-4 inline-block">← Elections</Link>
-      <h1 className="text-2xl font-bold mb-1">{election.title}</h1>
-      <p className="text-sm text-gray-500 mb-6">Candidates</p>
+    <main className="max-w-3xl mx-auto p-6 bg-black text-white min-h-screen">
+      <Link href="/elections" className="text-sm font-bold uppercase tracking-widest text-gray-400 border-b border-transparent hover:border-white hover:text-white pb-1 transition-colors mb-8 inline-block">← Elections</Link>
+      <h1 className="text-2xl font-extrabold uppercase tracking-widest mb-1">{election.title}</h1>
+      <p className="text-xs uppercase tracking-widest text-gray-400 mb-8 font-bold">Candidates</p>
 
-      {(!candidates || candidates.length === 0) && (
-        <p className="text-gray-500">No approved candidates yet.</p>
-      )}
-      <ul className="flex flex-col gap-4">
-        {(candidates ?? []).map((c: Candidate & { profiles: any }) => (
-          <li key={c.id} className="border rounded p-4 bg-white flex gap-4">
-            {c.photo_path && (
-              <div className="flex-shrink-0">
-                <PhotoThumb path={c.photo_path} candidateId={c.id} />
-              </div>
-            )}
-            <div>
-              <p className="font-semibold">{c.profiles?.full_name ?? 'Unknown'}</p>
-              <p className="text-sm text-gray-500">{c.profiles?.roll_no} · {c.profiles?.department}</p>
-              {c.manifesto && <p className="mt-2 text-sm text-gray-700 whitespace-pre-line">{c.manifesto}</p>}
-              {c.status !== 'approved' && (
-                <span className="mt-1 inline-block text-xs px-2 py-0.5 bg-yellow-100 text-yellow-800 rounded-full">
-                  {c.status}
-                </span>
+      {(!candidates || candidates.length === 0) ? (
+        <div className="py-12 text-center text-gray-500 uppercase tracking-widest text-sm font-bold border border-gray-900 border-dashed">
+          No approved candidates yet.
+        </div>
+      ) : (
+        <ul className="flex flex-col gap-4">
+          {(candidates ?? []).map((c: Candidate & { profiles: any }) => (
+            <li key={c.id} className="border border-gray-800 bg-transparent p-6 flex flex-col sm:flex-row gap-6 hover:border-gray-700 transition-colors">
+              {c.photo_path && (
+                <div className="flex-shrink-0">
+                  <PhotoThumb path={c.photo_path} candidateId={c.id} />
+                </div>
               )}
-            </div>
-          </li>
-        ))}
-      </ul>
+              <div className="flex-1">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <p className="font-bold text-lg text-white">{c.profiles?.full_name ?? 'Unknown'}</p>
+                  {c.status !== 'approved' && (
+                    <span className="text-[10px] px-3 py-1 uppercase font-bold tracking-widest border border-yellow-500 text-yellow-500">
+                      {c.status}
+                    </span>
+                  )}
+                </div>
+                <p className="text-xs uppercase tracking-widest text-gray-500 mt-1">{c.profiles?.roll_no} · {c.profiles?.department}</p>
+                {c.manifesto && <p className="mt-3 text-sm text-gray-400 whitespace-pre-line leading-relaxed">{c.manifesto}</p>}
+              </div>
+            </li>
+          ))}
+        </ul>
+      )}
 
-      <div className="mt-6 flex flex-wrap gap-3">
+      <div className="mt-8 flex flex-wrap gap-3">
         {election.status === 'nomination_open' && (
-          <Link href={`/elections/${electionId}/nominate`} className="inline-flex items-center min-h-[44px] px-4 py-2 text-sm font-bold text-yellow-700 border border-yellow-300 hover:bg-yellow-50 transition-colors">
+          <Link href={`/elections/${electionId}/nominate`} className="inline-flex items-center min-h-[44px] px-4 py-2 text-[11px] font-bold uppercase tracking-widest text-yellow-500 border border-yellow-900 hover:border-yellow-500 transition-colors">
             Self-nominate
           </Link>
         )}
         {election.status === 'voting_open' && (
-          <Link href={`/elections/${electionId}/vote`} className="inline-flex items-center min-h-[44px] px-4 py-2 text-sm font-bold text-green-700 border border-green-300 hover:bg-green-50 transition-colors">
+          <Link href={`/elections/${electionId}/vote`} className="inline-flex items-center min-h-[44px] px-4 py-2 text-[11px] font-bold uppercase tracking-widest text-green-500 border border-green-900 hover:border-green-500 transition-colors">
             Cast your vote
           </Link>
         )}
         {election.status === 'closed' && (
-          <Link href={`/elections/${electionId}/results`} className="inline-flex items-center min-h-[44px] px-4 py-2 text-sm font-bold text-gray-600 border border-gray-300 hover:bg-gray-100 transition-colors">
+          <Link href={`/elections/${electionId}/results`} className="inline-flex items-center min-h-[44px] px-4 py-2 text-[11px] font-bold uppercase tracking-widest text-gray-400 border border-gray-800 hover:text-white hover:border-white transition-colors">
             View results
           </Link>
         )}
@@ -89,7 +94,7 @@ async function PhotoThumb({ path, candidateId }: { path: string; candidateId: st
       alt={`Candidate ${candidateId} photo`}
       width={64}
       height={64}
-      className="rounded object-cover"
+      className="h-16 w-16 rounded border border-gray-800 bg-black object-cover"
     />
   )
 }

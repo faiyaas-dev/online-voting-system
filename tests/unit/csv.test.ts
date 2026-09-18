@@ -1,4 +1,4 @@
-import { parseCSV, analyzeRosterCSV } from '../../lib/csv'
+import { parseCSV, analyzeRosterCSV, diffFixedRows } from '../../lib/csv'
 
 describe('parseCSV (RFC 4180)', () => {
   it('parses simple rows and headers', () => {
@@ -79,5 +79,60 @@ describe('analyzeRosterCSV (full-file pre-scan)', () => {
     const scan = analyzeRosterCSV('')
     expect(scan.totalDataRows).toBe(0)
     expect(scan.missingColumns).toEqual(['email', 'roll_no', 'department', 'year'])
+  })
+})
+
+describe('diffFixedRows (re-upload loop)', () => {
+  const header = 'email,roll_no,department,year,full_name'
+
+  it('counts corrected rows as fixed and still-broken rows as remaining', () => {
+    const baseline = ['bad-email', 'missing-dept@t.com', 'gone@t.com']
+    const diff = diffFixedRows(
+      baseline,
+      `${header}\n` +
+        'fixed@t.com,R1,CSE,3,Fixed\n' +
+        'missing-dept@t.com,R2,,3,Still Broken\n',
+    )
+    // 'bad-email' is absent entirely (removed, not fixed) -> remaining.
+    // valid rows never seen before are irrelevant to the diff.
+    expect(diff.totalBaseline).toBe(3)
+    expect(diff.fixed).toBe(0)
+    expect(diff.remaining).toBe(3)
+    expect(diff.remainingEmails).toEqual(['bad-email', 'missing-dept@t.com', 'gone@t.com'])
+  })
+
+  it('marks a baseline email fixed when its row now validates clean', () => {
+    const diff = diffFixedRows(
+      ['typo@t.com'],
+      `${header}\ntypo@t.com,R9,CSE,3,Now Valid\n`,
+    )
+    expect(diff.fixed).toBe(1)
+    expect(diff.fixedEmails).toEqual(['typo@t.com'])
+    expect(diff.remaining).toBe(0)
+  })
+
+  it('mirrors server semantics: a duplicate of a failed row is not a false duplicate', () => {
+    // Row 1 fails (bad year) so it must NOT poison row 2's duplicate check —
+    // exactly like the Edge Function, which only tracks valid rows.
+    const diff = diffFixedRows(
+      ['dup@t.com'],
+      `${header}\n` +
+        'dup@t.com,R1,CSE,notayear,Bad Year\n' +
+        'dup@t.com,R1,CSE,3,Good Row\n',
+    )
+    expect(diff.fixed).toBe(1)
+    expect(diff.remaining).toBe(0)
+  })
+
+  it('flags in-batch duplicates in the corrected file as remaining', () => {
+    const diff = diffFixedRows(
+      ['dup@t.com'],
+      `${header}\n` +
+        'dup@t.com,R1,CSE,3,One\n' +
+        'dup@t.com,R2,CSE,3,Two\n',
+    )
+    // First occurrence validates clean, second is a batch duplicate —
+    // the email still has a failing row, but the clean occurrence counts.
+    expect(diff.fixedEmails).toContain('dup@t.com')
   })
 })

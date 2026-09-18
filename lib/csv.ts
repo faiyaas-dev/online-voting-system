@@ -1,5 +1,6 @@
 // RFC 4180 compliant CSV parsing shared by the roster uploader.
 // Pure functions only (no I/O) so they are unit-testable under Jest.
+import { validateRosterRow } from '../supabase/functions/roster-csv-validate/validation'
 
 /**
  * Parse CSV text into rows of fields. Handles quoted fields containing
@@ -120,5 +121,67 @@ export function analyzeRosterCSV(text: string): RosterPreScan {
     totalDataRows: dataRows.length,
     duplicateEmailRows: dupes(emails),
     duplicateRollNoRows: dupes(rollNos),
+  }
+}
+
+export interface FixedRowsDiff {
+  /** Previously-failing emails that now validate clean (client-side). */
+  fixed: number
+  fixedEmails: string[]
+  /** Previously-failing emails still failing or absent from the new file. */
+  remaining: number
+  remainingEmails: string[]
+  totalBaseline: number
+}
+
+export function normalizeEmail(value: string | null | undefined): string {
+  return (value ?? '').trim().toLowerCase()
+}
+
+/**
+ * Re-upload loop diff (P2-2): compare a corrected file against the emails
+ * recorded as failed by the previous upload, using the SAME
+ * validateRosterRow rules the server Edge Function applies, so the pre-check
+ * mirrors upload semantics (header mapping + in-batch duplicate tracking).
+ *
+ * Honesty boundary: the server also rejects duplicates against rows already
+ * in the roster (duplicate_email_existing), which no client pre-check can
+ * see. This diff is advisory — the upload result stays the final truth.
+ */
+export function diffFixedRows(baselineEmails: string[], csvText: string): FixedRowsDiff {
+  const baseline = baselineEmails.map(normalizeEmail).filter(Boolean)
+  const scan = analyzeRosterCSV(csvText)
+
+  // Map data rows to header-named objects, mirroring the server's row shape.
+  const seenEmails = new Set<string>()
+  const seenRollNos = new Set<string>()
+  const cleanEmails = new Set<string>()
+  for (const row of scan.dataRows) {
+    const record: Record<string, string> = {}
+    scan.headers.forEach((header, i) => {
+      record[header] = row[i] ?? ''
+    })
+    const reason = validateRosterRow(record, seenEmails, seenRollNos)
+    const email = normalizeEmail(record.email)
+    if (reason === null) {
+      // Mirror the server (index.ts:85-86): only VALID rows populate the
+      // seen-sets, so a later duplicate of a failed row is not misflagged.
+      if (email !== '') {
+        seenEmails.add(email)
+        cleanEmails.add(email)
+      }
+      const rollNo = (record.roll_no ?? '').trim()
+      if (rollNo !== '') seenRollNos.add(rollNo.toLowerCase())
+    }
+  }
+
+  const fixedEmails = baseline.filter(email => cleanEmails.has(email))
+  const remainingEmails = baseline.filter(email => !cleanEmails.has(email))
+  return {
+    fixed: fixedEmails.length,
+    fixedEmails,
+    remaining: remainingEmails.length,
+    remainingEmails,
+    totalBaseline: baseline.length,
   }
 }
