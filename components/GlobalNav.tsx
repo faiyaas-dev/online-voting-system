@@ -21,7 +21,7 @@ export default async function GlobalNav() {
           Vote.
         </Link>
         {institution?.name && (
-          <span className="text-[10px] uppercase tracking-[0.24em] text-gray-400 hidden sm:inline-block">
+          <span className="max-w-[50vw] truncate text-[10px] uppercase tracking-[0.24em] text-gray-400" title={institution.name}>
             {institution.name}
           </span>
         )}

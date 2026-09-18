@@ -164,17 +164,21 @@ export default async function HomePage() {
       
       <div className="bg-gray-900 border-t border-gray-800 p-12 md:p-24">
         <div className="max-w-5xl mx-auto">
-          <h2 className="text-3xl font-extrabold uppercase tracking-widest mb-16 text-center">Platform Features</h2>
+          <h2 className="text-3xl font-extrabold uppercase tracking-widest mb-4 text-center">Built for both sides of the ballot box</h2>
+          <p className="text-center text-sm text-gray-500 mb-16">Students vote in under 2 minutes. Administrators run the whole election.</p>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
             <div className="space-y-4">
+              <p className="text-[11px] font-bold uppercase tracking-widest text-gray-500">For administrators</p>
               <h3 className="text-xl font-bold uppercase tracking-wide text-white">1-Click CSV Roster</h3>
               <p className="text-gray-400 leading-relaxed">Instantly upload your student database. The system automatically restricts voting to verified emails, entirely eliminating unauthorized ballots.</p>
             </div>
             <div className="space-y-4">
+              <p className="text-[11px] font-bold uppercase tracking-widest text-gray-500">For administrators</p>
               <h3 className="text-xl font-bold uppercase tracking-wide text-white">Scoped Elections</h3>
               <p className="text-gray-400 leading-relaxed">Run institution-wide presidential elections alongside granular department and year-specific representative votes.</p>
             </div>
             <div className="space-y-4">
+              <p className="text-[11px] font-bold uppercase tracking-widest text-gray-500">For students</p>
               <h3 className="text-xl font-bold uppercase tracking-wide text-white">OTP Authentication</h3>
               <p className="text-gray-400 leading-relaxed">No passwords to lose or reset. Students authenticate securely via one-time magic links sent directly to their inbox.</p>
             </div>

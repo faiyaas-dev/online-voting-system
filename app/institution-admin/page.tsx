@@ -32,11 +32,22 @@ export default async function InstitutionAdminPage() {
   const elections: Election[] = electionsRes.data ?? []
   const pendingCandidates = pendingCandidatesRes.data ?? []
 
+  // Tenant context for the header: the operator must see WHICH college they
+  // are administering (wrong-tenant action is the high-risk failure here).
+  const { data: institution } = profile.institution_id
+    ? await supabase.from('institutions').select('name').eq('id', profile.institution_id).single()
+    : { data: null }
+
   return (
     <main className="min-h-screen bg-black text-white p-6 md:p-12">
       <div className="max-w-6xl mx-auto space-y-12">
         <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6 border-b border-gray-800 pb-6">
-          <h1 className="text-4xl font-extrabold uppercase tracking-widest">Institution Admin</h1>
+          <div>
+            <h1 className="text-4xl font-extrabold uppercase tracking-widest">Institution Admin</h1>
+            {institution?.name && (
+              <p className="mt-2 text-sm font-bold uppercase tracking-widest text-gray-500">{institution.name}</p>
+            )}
+          </div>
         </header>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">

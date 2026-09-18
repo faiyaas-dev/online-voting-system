@@ -50,15 +50,24 @@ export default async function DeptAdminPage() {
         .in('election_id', electionIds)
     : { data: [] }
 
+  // Tenant context for the header: the operator must see WHICH college (and
+  // which department) they are governing — RLS scopes the data, the header
+  // must say so in plain language.
+  const { data: institution } = profile.institution_id
+    ? await supabase.from('institutions').select('name').eq('id', profile.institution_id).single()
+    : { data: null }
+
   return (
     <main className="min-h-screen bg-black text-white p-6 md:p-12">
       <div className="max-w-6xl mx-auto space-y-12">
         <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6 border-b border-gray-800 pb-6">
           <div>
             <h1 className="text-4xl font-extrabold uppercase tracking-widest">Department Admin</h1>
-            <p className="text-sm font-bold tracking-widest text-gray-500 uppercase mt-2">Department: {profile.department}</p>
+            <p className="text-sm font-bold tracking-widest text-gray-500 uppercase mt-2">
+              {institution?.name ? `${institution.name} · ` : ''}Department: {profile.department}
+            </p>
           </div>
-          
+
         </header>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">

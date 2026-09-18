@@ -85,7 +85,7 @@ export default function VotePage({ params }: { params: { id: string } }) {
 
   if (!election || election.status !== 'voting_open') return (
     <main className="max-w-lg mx-auto p-6 bg-black text-white min-h-screen">
-      <div className="rounded-xl border border-zinc-800 bg-zinc-950 p-6">
+      <div className="border border-zinc-800 bg-zinc-950 p-6">
         <p className="text-amber-400 font-bold uppercase tracking-wider text-sm flex items-center gap-2">
           <span>🕊️</span> Voting is not currently open for this election.
         </p>
@@ -107,7 +107,7 @@ export default function VotePage({ params }: { params: { id: string } }) {
 
   if (alreadyVoted) return (
     <main className="max-w-lg mx-auto p-6 bg-black text-white min-h-screen">
-      <div className="rounded-2xl border border-zinc-800 bg-zinc-950 p-8 text-center space-y-4">
+      <div className="border border-zinc-800 bg-zinc-950 p-8 text-center space-y-4">
         <div className="text-4xl">🛡️</div>
         <h2 className="text-xl font-bold">One Student, One Vote!</h2>
         <p className="text-sm text-zinc-400">

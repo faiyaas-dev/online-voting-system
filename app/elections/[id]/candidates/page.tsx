@@ -42,7 +42,7 @@ export default async function CandidatesPage({ params }: { params: { id: string 
             <li key={c.id} className="border border-gray-800 bg-transparent p-6 flex flex-col sm:flex-row gap-6 hover:border-gray-700 transition-colors">
               {c.photo_path && (
                 <div className="flex-shrink-0">
-                  <PhotoThumb path={c.photo_path} candidateId={c.id} />
+                  <PhotoThumb path={c.photo_path} name={c.profiles?.full_name ?? 'Unknown candidate'} />
                 </div>
               )}
               <div className="flex-1">
@@ -84,14 +84,14 @@ export default async function CandidatesPage({ params }: { params: { id: string 
 }
 
 // Photo thumbnail fetches a signed URL server-side
-async function PhotoThumb({ path, candidateId }: { path: string; candidateId: string }) {
+async function PhotoThumb({ path, name }: { path: string; name: string }) {
   const supabase = createClient()
   const { data } = await supabase.storage.from('candidate-photos').createSignedUrl(path, 3600)
   if (!data?.signedUrl) return null
   return (
     <Image
       src={data.signedUrl}
-      alt={`Candidate ${candidateId} photo`}
+      alt={`Photo of candidate ${name}`}
       width={64}
       height={64}
       className="h-16 w-16 rounded border border-gray-800 bg-black object-cover"
