@@ -166,7 +166,7 @@ export default function VotePage({ params }: { params: { id: string } }) {
                               e.stopPropagation()
                               setExpandedId(prev => prev === c.id ? null : c.id)
                             }}
-                            className="mt-2 text-xs font-semibold text-blue-400 hover:text-blue-300 transition-colors"
+                            className="mt-2 min-h-[44px] px-1 py-2 text-xs font-semibold text-blue-400 underline hover:text-blue-300 transition-colors"
                           >
                             {expandedId === c.id ? '↑ Show less' : '↓ Read full manifesto'}
                           </button>

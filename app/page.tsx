@@ -64,9 +64,10 @@ export default async function HomePage() {
         </div>
       </div>
 
-      {/* Sticky mobile Sign In bar — Fogg:Prompt after hero fold, md:hidden so desktop unchanged */}
+      {/* Sticky Sign In bar — Fogg:Prompt after hero fold, all viewports so
+          desktop scrollers keep a CTA too (was md:hidden mobile-only). */}
       <div
-        className="sticky bottom-0 z-40 flex items-center gap-3 border-t border-gray-800 bg-black p-4 md:hidden"
+        className="sticky bottom-0 z-40 flex items-center gap-3 border-t border-gray-800 bg-black p-4"
         aria-label="Quick sign in"
       >
         <Link
@@ -128,27 +129,28 @@ export default async function HomePage() {
         </div>
       </section>
 
-      {/* Proof row — Cialdini:Social Proof. Colleges from public RPC only; elections/votes without numbers per spec */}
+      {/* Proof row — Cialdini:Social Proof. Colleges from public RPC only; elections/votes without numbers per spec.
+          Zero/unknown reads as "founding" copy + lock icons, never bare dashes that scan as "dead product". */}
       <section aria-label="Platform proof" className="border-y border-gray-800 bg-gray-900/40 px-8 py-8 md:py-10">
         <div className="mx-auto max-w-5xl">
           <div className="grid grid-cols-3 gap-4 text-center md:gap-8">
             <div className="space-y-1">
               <p className="text-2xl font-extrabold tracking-tight text-white md:text-3xl" aria-label={`${collegesCount ?? 0} colleges`}>
-                {collegesCount !== null ? collegesCount : '—'}
+                {collegesCount !== null && collegesCount > 0 ? collegesCount : '✦'}
               </p>
               <p className="text-xs font-bold uppercase tracking-widest text-gray-500">Colleges</p>
-              <p className="text-[11px] text-gray-600">public colleges only</p>
+              <p className="text-[11px] text-gray-600">{collegesCount !== null && collegesCount > 0 ? 'public colleges only' : 'founding colleges onboarding'}</p>
             </div>
             <div className="space-y-1">
               <p className="text-2xl font-extrabold tracking-tight text-white md:text-3xl" aria-hidden="true">
-                —
+                🔒
               </p>
               <p className="text-xs font-bold uppercase tracking-widest text-gray-500">Elections</p>
-              <p className="text-[11px] text-gray-600">live after sign-in</p>
+              <p className="text-[11px] text-gray-600">sign in to view</p>
             </div>
             <div className="space-y-1">
               <p className="text-2xl font-extrabold tracking-tight text-white md:text-3xl" aria-hidden="true">
-                —
+                🔒
               </p>
               <p className="text-xs font-bold uppercase tracking-widest text-gray-500">Votes</p>
               <p className="text-[11px] text-gray-600">aggregate only</p>
