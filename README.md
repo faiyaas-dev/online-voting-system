@@ -1,5 +1,7 @@
 # Online Voting System (Multi-Tenant College Elections SaaS)
 
+[![Netlify Status](https://api.netlify.com/api/v1/badges/8a9bf773-d77d-4141-b51e-f6ad8e0ae4dc/deploy-status)](https://app.netlify.com/projects/raise-and-raised/deploys)
+
 > A secure, multi-tenant SaaS platform built for universities, colleges, and academic departments to run decentralized, tamper-proof student elections.
 
 The system guarantees election integrity by enforcing tenant boundaries, voter eligibility scoping, and single-vote constraints directly at the database layer using PostgreSQL Row Level Security (RLS) and constraints—never trusting application code alone.
