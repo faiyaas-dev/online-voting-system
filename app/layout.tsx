@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import './globals.css'
 import GlobalNav from '@/components/GlobalNav'
+import CivicEasterEgg from '@/components/CivicEasterEgg'
 
 export const metadata: Metadata = {
   title: 'College Election System',
@@ -19,6 +20,7 @@ export default function RootLayout({
         <div className="flex-1">
           {children}
         </div>
+        <CivicEasterEgg />
       </body>
     </html>
   )

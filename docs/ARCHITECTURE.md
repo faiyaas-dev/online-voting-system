@@ -10,16 +10,16 @@ The system is architected as a secure multi-tenant SaaS application built on **N
 
 ```mermaid
 graph TD
-    Client[Next.js 14 Frontend / SSR & RSC] -->|Supabase Auth / SSR Client| SupabaseGate[Supabase API Gateway]
-    SupabaseGate -->|JWT Context / auth.uid| PostgresDB[(PostgreSQL 15+ Engine)]
+    Client["Next.js 14 Frontend / SSR & RSC"] -->|Supabase Auth / SSR Client| SupabaseGate[Supabase API Gateway]
+    SupabaseGate -->|JWT Context / auth.uid| PostgresDB[("PostgreSQL 15+ Engine")]
     SupabaseGate -->|Edge Ingestion| EdgeFn[Supabase Edge Functions]
     EdgeFn -->|Service Role / Batch Validate| PostgresDB
     
     subgraph PostgreSQL Database Layer
         RLS[Row Level Security Engine]
-        Tables[institutions | profiles | roster | elections | candidates | votes]
+        Tables["institutions | profiles | roster | elections | candidates | votes"]
         RPC[Security Definer RPCs]
-        Storage[(candidate-photos Bucket)]
+        Storage[("candidate-photos Bucket")]
     end
     
     PostgresDB --> RLS
@@ -33,7 +33,7 @@ graph TD
 
 The system enforces a 4-tier role hierarchy. Every record in child tables (`profiles`, `roster`, `elections`, `candidates`, `votes`, `roster_import_errors`) is strictly scoped by `institution_id`.
 
-```
+```text
 Platform Admin (Role: platform_admin)
   │── Cross-institution oversight via aggregate RPCs only
   └── Zero access to student PII, roster rows, or individual ballot records
@@ -208,7 +208,8 @@ sequenceDiagram
 ```
 
 ### Integrity Hash Formula
-```
+
+```sql
 integrity_sha256 = encode(
   sha256(
     (p_election_id::text || ':' || v_election.closes_at::text || ':' || v_votes_cast::text || ':' || v_results::text)::bytea
@@ -216,4 +217,5 @@ integrity_sha256 = encode(
   'hex'
 )
 ```
+
 Any modification to the underlying vote counts or election timestamps invalidates the SHA-256 integrity signature.
