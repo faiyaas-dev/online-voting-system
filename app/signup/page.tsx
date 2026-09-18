@@ -1,8 +1,8 @@
 'use client'
 
-import { useState, useEffect, useRef, useCallback } from 'react'
+import { useState, useEffect, useRef, useCallback, Suspense } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 
 const PENDING_KEY = 'ovs_signup_pending'
 
@@ -46,9 +46,10 @@ function Steps({ step }: { step: 1 | 2 | 3 }) {
 // Institution self-serve signup:
 // 1. Enter institution name + admin email → send OTP
 // 2. Verify OTP → create institution row + institution_admin profile
-export default function SignupPage() {
+function SignupContent() {
   const [supabase] = useState(() => createClient())
   const router = useRouter()
+  const searchParams = useSearchParams()
 
   const [institutionName, setInstitutionName] = useState('')
   const [slug, setSlug] = useState('')
@@ -71,7 +72,12 @@ export default function SignupPage() {
 
   // Restore pending signup after magic-link round-trip (page state is lost
   // on the email-link redirect, so persist to sessionStorage before send).
+  // A failed exchange returns here with ?error=auth_callback_failed —
+  // surface it instead of a silent blank form.
   useEffect(() => {
+    if (searchParams.get('error') === 'auth_callback_failed') {
+      setError('That email link expired or was already used — links work once and inbox scanners sometimes open them first. Re-enter your details and tap Send OTP for a fresh code.')
+    }
     try {
       const raw = sessionStorage.getItem(PENDING_KEY)
       if (!raw) return
@@ -97,7 +103,7 @@ export default function SignupPage() {
         })
       }
     })
-  }, [supabase])
+  }, [supabase, searchParams])
 
   useEffect(() => {
     if (cooldown <= 0) return
@@ -309,5 +315,13 @@ export default function SignupPage() {
         )}
       </div>
     </main>
+  )
+}
+
+export default function SignupPage() {
+  return (
+    <Suspense fallback={<main className="flex items-center justify-center min-h-screen bg-black text-white p-6"><div>Loading...</div></main>}>
+      <SignupContent />
+    </Suspense>
   )
 }

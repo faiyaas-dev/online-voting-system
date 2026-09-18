@@ -46,5 +46,9 @@ export async function GET(request: NextRequest) {
     }
   }
 
-  return NextResponse.redirect(`${origin}/login?error=auth_callback_failed`)
+  // Failure lands back where the flow started (login or signup) with an
+  // explanatory flag — never a silent dump on a blank form. `next` is
+  // already validated as same-origin relative above.
+  const sep = next.includes('?') ? '&' : '?'
+  return NextResponse.redirect(`${origin}${next}${sep}error=auth_callback_failed`)
 }

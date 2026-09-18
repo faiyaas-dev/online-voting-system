@@ -2,6 +2,14 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Keyboard focus system: every student votes, including keyboard-only voters.
+   Square 2px outline matches the brutalist tokens; border-only focus was
+   invisible on buttons and links. */
+:focus-visible {
+  outline: 2px solid #fff;
+  outline-offset: 2px;
+}
+
 /* Tactile Ballot Card Selection */
 .candidate-card-interactive {
   transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
@@ -56,6 +64,7 @@
 /* Accessibility: Respect Reduced Motion */
 @media (prefers-reduced-motion: reduce) {
   .candidate-card-interactive,
+  .candidate-card-selected,
   .live-pulse-dot::before {
     animation: none !important;
     transition: none !important;

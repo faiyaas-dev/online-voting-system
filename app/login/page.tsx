@@ -76,7 +76,12 @@ function LoginContent() {
 
   // Restore pending login after magic-link round-trip, and resume an
   // already-established session (link click) instead of a dead form.
+  // A failed exchange (expired / prefetched / reused link) returns here with
+  // ?error=auth_callback_failed — surface it instead of a silent blank form.
   useEffect(() => {
+    if (searchParams.get('error') === 'auth_callback_failed') {
+      setError('That email link expired or was already used — links work once and inbox scanners sometimes open them first. Enter your email and tap Send OTP for a fresh code.')
+    }
     try {
       const raw = sessionStorage.getItem(PENDING_KEY)
       if (raw) {
@@ -96,7 +101,7 @@ function LoginContent() {
         if (raw && JSON.parse(raw).sent) setSent(true)
       } catch { /* ignore */ }
     })
-  }, [supabase])
+  }, [supabase, searchParams])
 
   useEffect(() => {
     if (cooldown <= 0) return
