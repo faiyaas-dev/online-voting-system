@@ -59,28 +59,33 @@ export default async function ElectionsPage() {
                           <LiveCountdown closesAt={e.closes_at} />
                         </span>
                       )}
+                      {e.status === 'nomination_open' && (
+                        <span className="text-yellow-400">
+                          <LiveCountdown closesAt={e.closes_at} label="Nominations close in" closedLabel="Nominations closed" />
+                        </span>
+                      )}
                     </div>
                   </div>
                   <span className={`text-[10px] px-3 py-1 uppercase font-bold tracking-widest border ${statusBadge(e.status)}`}>
                     {e.status.replace('_', ' ')}
                   </span>
                 </div>
-                <div className="mt-8 flex flex-wrap gap-6">
-                  <Link href={`/elections/${e.id}/candidates`} className="text-[11px] font-bold uppercase tracking-widest text-white border-b border-transparent hover:border-white pb-1 transition-colors">
+                <div className="mt-8 flex flex-wrap gap-3">
+                  <Link href={`/elections/${e.id}/candidates`} className="inline-flex items-center min-h-[44px] px-4 py-2 text-[11px] font-bold uppercase tracking-widest text-white border border-gray-700 hover:border-white transition-colors">
                     View Candidates
                   </Link>
                   {e.status === 'nomination_open' && (
-                    <Link href={`/elections/${e.id}/nominate`} className="text-[11px] font-bold uppercase tracking-widest text-yellow-500 border-b border-transparent hover:border-yellow-500 pb-1 transition-colors">
+                    <Link href={`/elections/${e.id}/nominate`} className="inline-flex items-center min-h-[44px] px-4 py-2 text-[11px] font-bold uppercase tracking-widest text-yellow-500 border border-yellow-900 hover:border-yellow-500 transition-colors">
                       Self-Nominate
                     </Link>
                   )}
                   {e.status === 'voting_open' && (
-                    <Link href={`/elections/${e.id}/vote`} className="text-[11px] font-bold uppercase tracking-widest text-green-500 border-b border-transparent hover:border-green-500 pb-1 transition-colors">
+                    <Link href={`/elections/${e.id}/vote`} className="inline-flex items-center min-h-[44px] px-4 py-2 text-[11px] font-bold uppercase tracking-widest text-green-500 border border-green-900 hover:border-green-500 transition-colors">
                       Vote Now
                     </Link>
                   )}
                   {e.status === 'closed' && (
-                    <Link href={`/elections/${e.id}/results`} className="text-[11px] font-bold uppercase tracking-widest text-gray-400 border-b border-transparent hover:text-white hover:border-white pb-1 transition-colors">
+                    <Link href={`/elections/${e.id}/results`} className="inline-flex items-center min-h-[44px] px-4 py-2 text-[11px] font-bold uppercase tracking-widest text-gray-400 border border-gray-800 hover:text-white hover:border-white transition-colors">
                       Results
                     </Link>
                   )}

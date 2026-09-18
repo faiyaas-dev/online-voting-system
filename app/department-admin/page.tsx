@@ -18,7 +18,20 @@ export default async function DeptAdminPage() {
     .single<Profile>()
 
   if (!profile || profile.role !== 'department_admin') redirect('/')
-  if (!profile.department) redirect('/')
+  if (!profile.department) {
+    return (
+      <main className="min-h-screen bg-black text-white p-6 md:p-12">
+        <div className="max-w-lg mx-auto space-y-4 border border-yellow-900 bg-yellow-950/20 p-8">
+          <h1 className="text-xl font-bold uppercase tracking-widest">No department assigned</h1>
+          <p className="text-sm text-gray-300">
+            Your admin account has no department attached, so there is nothing to show here.
+            Contact your institution admin and ask them to re-invite you with the exact
+            department name as spelled in the student roster.
+          </p>
+        </div>
+      </main>
+    )
+  }
 
   // Only own-dept elections visible via RLS
   const { data: elections } = await supabase
@@ -63,6 +76,7 @@ export default async function DeptAdminPage() {
           <div className="space-y-8">
             <section className="border border-gray-800 p-6 md:p-8 space-y-6 bg-transparent">
               <h2 className="text-xl font-bold uppercase tracking-widest text-gray-300">Elections</h2>
+              <p className="text-xs text-gray-500">Showing only elections scoped to “{profile.department}”. If this list is unexpectedly empty, confirm with your institution admin that the spelling matches the roster exactly.</p>
               <div className="overflow-hidden">
                 <ElectionTable elections={(elections as Election[]) ?? []} />
               </div>

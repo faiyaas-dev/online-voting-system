@@ -20,17 +20,52 @@ export default function CreateElectionForm({ institutionId, adminId, forceDepart
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState(false)
+  const [yearAcknowledged, setYearAcknowledged] = useState(false)
 
   async function create(e: React.FormEvent) {
     e.preventDefault()
     setError('')
     setLoading(true)
 
+    // Client-side guards (server/RLS remain the source of truth — see votes_insert policy).
+    // datetime-local yields local wall-clock time; Date() interprets it in the
+    // browser's timezone and we store UTC. The label below states this explicitly.
+    const opensDate = new Date(opensAt)
+    const closesDate = new Date(closesAt)
+    if (isNaN(opensDate.getTime()) || isNaN(closesDate.getTime())) {
+      setError('Both open and close times are required.')
+      setLoading(false)
+      return
+    }
+    if (closesDate <= opensDate) {
+      setError('Close time must be after open time.')
+      setLoading(false)
+      return
+    }
+    if (year.trim()) {
+      const parsed = parseInt(year, 10)
+      if (isNaN(parsed)) {
+        setError('Year must be a number, or left blank for all years.')
+        setLoading(false)
+        return
+      }
+      // Non-blocking sanity warning only — year has no locked range, and a typo
+      // like "33" would otherwise create an election no roster row can ever match.
+      // First submit with an unusual year only surfaces the warning; submitting
+      // again confirms it was intentional.
+      if ((parsed < 1 || parsed > 10) && !yearAcknowledged) {
+        setError('Heads up: year is usually 1–6. Submit again if this value is intentional.')
+        setYearAcknowledged(true)
+        setLoading(false)
+        return
+      }
+    }
+
     const payload: any = {
       institution_id: institutionId,
       title: title.trim(),
-      opens_at: new Date(opensAt).toISOString(),
-      closes_at: new Date(closesAt).toISOString(),
+      opens_at: opensDate.toISOString(),
+      closes_at: closesDate.toISOString(),
       created_by: adminId,
     }
     if (department.trim()) payload.scope_department = department.trim()
@@ -40,6 +75,7 @@ export default function CreateElectionForm({ institutionId, adminId, forceDepart
     setLoading(false)
     if (err) { setError(err.message); return }
     setSuccess(true)
+    setYearAcknowledged(false)
     setTimeout(() => { setSuccess(false); setTitle(''); setYear(''); setOpensAt(''); setClosesAt(''); if (!forceDepartment) setDepartment('') }, 2000)
   }
 
@@ -76,7 +112,7 @@ export default function CreateElectionForm({ institutionId, adminId, forceDepart
             id="year"
             type="number"
             value={year}
-            onChange={e => setYear(e.target.value)}
+            onChange={e => { setYear(e.target.value); setYearAcknowledged(false) }}
             placeholder="Year (leave blank for all)"
             className="border rounded px-3 py-2 text-sm w-36"
           />
@@ -84,7 +120,7 @@ export default function CreateElectionForm({ institutionId, adminId, forceDepart
       </div>
       <div className="flex gap-3 flex-wrap">
         <div className="flex flex-col flex-1">
-          <label htmlFor="opensAt" className="text-xs text-gray-500 mb-1">Opens at</label>
+          <label htmlFor="opensAt" className="text-xs text-gray-500 mb-1">Opens at <span className="text-gray-400">(your local time, stored as UTC)</span></label>
           <input
             id="opensAt"
             type="datetime-local"
@@ -95,7 +131,7 @@ export default function CreateElectionForm({ institutionId, adminId, forceDepart
           />
         </div>
         <div className="flex flex-col flex-1">
-          <label htmlFor="closesAt" className="text-xs text-gray-500 mb-1">Closes at</label>
+          <label htmlFor="closesAt" className="text-xs text-gray-500 mb-1">Closes at <span className="text-gray-400">(your local time, stored as UTC — must be after opening)</span></label>
           <input
             id="closesAt"
             type="datetime-local"

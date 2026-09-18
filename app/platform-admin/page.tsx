@@ -86,6 +86,10 @@ export default async function PlatformAdminPage() {
               </tbody>
             </table>
             </div>
+            <p className="text-xs text-gray-500">
+              Participation = votes cast ÷ (roster size × elections in voting or closed status), averaged across elections.
+              It is not per-election turnout. “Active” counts elections in voting-open status only — nominations and drafts are excluded.
+            </p>
           </div>
         )}
       </div>

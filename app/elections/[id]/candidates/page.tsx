@@ -57,19 +57,19 @@ export default async function CandidatesPage({ params }: { params: { id: string 
         ))}
       </ul>
 
-      <div className="mt-6 flex gap-4">
+      <div className="mt-6 flex flex-wrap gap-3">
         {election.status === 'nomination_open' && (
-          <Link href={`/elections/${electionId}/nominate`} className="text-sm text-yellow-700 underline">
+          <Link href={`/elections/${electionId}/nominate`} className="inline-flex items-center min-h-[44px] px-4 py-2 text-sm font-bold text-yellow-700 border border-yellow-300 hover:bg-yellow-50 transition-colors">
             Self-nominate
           </Link>
         )}
         {election.status === 'voting_open' && (
-          <Link href={`/elections/${electionId}/vote`} className="text-sm text-green-700 underline">
+          <Link href={`/elections/${electionId}/vote`} className="inline-flex items-center min-h-[44px] px-4 py-2 text-sm font-bold text-green-700 border border-green-300 hover:bg-green-50 transition-colors">
             Cast your vote
           </Link>
         )}
         {election.status === 'closed' && (
-          <Link href={`/elections/${electionId}/results`} className="text-sm text-gray-600 underline">
+          <Link href={`/elections/${electionId}/results`} className="inline-flex items-center min-h-[44px] px-4 py-2 text-sm font-bold text-gray-600 border border-gray-300 hover:bg-gray-100 transition-colors">
             View results
           </Link>
         )}

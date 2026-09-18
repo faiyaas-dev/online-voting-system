@@ -15,12 +15,19 @@ export default function ElectionTable({ elections }: { elections: Election[] }) 
   const supabase = createClient()
   const [updating, setUpdating] = useState<string | null>(null)
   const [localElections, setLocalElections] = useState(elections)
+  const [confirmKey, setConfirmKey] = useState<string | null>(null)
+  const [error, setError] = useState('')
 
   async function updateStatus(id: string, status: string) {
     setUpdating(id)
+    setError('')
     const { error } = await supabase.from('elections').update({ status }).eq('id', id)
     if (!error) {
       setLocalElections(prev => prev.map(e => e.id === id ? { ...e, status: status as any } : e))
+      setConfirmKey(null)
+    } else {
+      // Surface failure — stale UI was the prior defect; keep the row and explain.
+      setError(`Could not move election to "${status.replace('_', ' ')}": ${error.message}`)
     }
     setUpdating(null)
   }
@@ -29,6 +36,7 @@ export default function ElectionTable({ elections }: { elections: Election[] }) 
 
   return (
     <div className="overflow-x-auto">
+      {error && <p role="alert" className="text-red-600 text-sm mb-2">{error}</p>}
       <table className="w-full text-sm border-collapse">
         <thead>
           <tr className="border-b text-left bg-gray-50">
@@ -49,16 +57,40 @@ export default function ElectionTable({ elections }: { elections: Election[] }) 
                 <span className="text-xs font-medium">{e.status.replace('_', ' ')}</span>
               </td>
               <td className="py-2 px-2 flex gap-2 flex-wrap">
-                {STATUS_TRANSITIONS[e.status]?.map(next => (
-                  <button
-                    key={next}
-                    disabled={updating === e.id}
-                    onClick={() => updateStatus(e.id, next)}
-                    className="text-xs border rounded px-2 py-0.5 hover:bg-gray-100 disabled:opacity-50"
-                  >
-                    → {next.replace('_', ' ')}
-                  </button>
-                ))}
+                {STATUS_TRANSITIONS[e.status]?.map(next => {
+                  const key = `${e.id}:${next}`
+                  if (confirmKey === key) {
+                    return (
+                      <span key={next} className="inline-flex gap-1 items-center">
+                        <span className="text-xs text-gray-600">→ {next.replace('_', ' ')}?</span>
+                        <button
+                          disabled={updating === e.id}
+                          onClick={() => updateStatus(e.id, next)}
+                          className="text-xs border rounded px-2 py-0.5 bg-gray-800 text-white disabled:opacity-50"
+                        >
+                          Confirm
+                        </button>
+                        <button
+                          disabled={updating === e.id}
+                          onClick={() => setConfirmKey(null)}
+                          className="text-xs border rounded px-2 py-0.5 hover:bg-gray-100 disabled:opacity-50"
+                        >
+                          Cancel
+                        </button>
+                      </span>
+                    )
+                  }
+                  return (
+                    <button
+                      key={next}
+                      disabled={updating === e.id}
+                      onClick={() => { setError(''); setConfirmKey(key) }}
+                      className="text-xs border rounded px-2 py-0.5 hover:bg-gray-100 disabled:opacity-50"
+                    >
+                      → {next.replace('_', ' ')}
+                    </button>
+                  )
+                })}
               </td>
             </tr>
           ))}

@@ -85,6 +85,7 @@ export default function SignupPage() {
                 className="bg-transparent border-b border-gray-700 focus:border-white px-0 py-3 text-sm font-mono outline-none transition-colors"
                 placeholder="state-university"
               />
+              <p className="text-xs text-gray-500">3–50 chars, lowercase letters, numbers, hyphens. If taken, you will be asked to pick another after verifying your OTP.</p>
             </div>
             <div className="flex flex-col gap-2">
               <label htmlFor="adminEmail" className="text-xs font-bold uppercase tracking-widest text-gray-400">Admin Email</label>

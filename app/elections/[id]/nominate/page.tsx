@@ -127,6 +127,7 @@ export default function NominatePage({ params }: { params: { id: string } }) {
   if (success) return (
     <main className="p-6 max-w-lg mx-auto">
       <p className="text-green-500 font-bold uppercase tracking-widest text-sm mb-4">Nomination submitted! It is pending admin approval.</p>
+      <p className="text-sm text-gray-400 mb-4">You can check your pending card on the candidates page — it is visible to you now and to voters once approved.</p>
       <Link href={`/elections/${electionId}/candidates`} className="text-sm font-bold uppercase tracking-widest text-gray-400 border-b border-transparent hover:border-white hover:text-white pb-1 transition-colors mt-2 inline-block">← View candidates</Link>
     </main>
   )
@@ -143,13 +144,17 @@ export default function NominatePage({ params }: { params: { id: string } }) {
             value={manifesto}
             onChange={e => setManifesto(e.target.value)}
             rows={5}
+            maxLength={1000}
             className="w-full bg-transparent border border-gray-800 focus:border-white px-4 py-3 text-sm outline-none transition-colors"
             placeholder="Tell voters why you're running…"
           />
+          <p className="mt-1 text-xs text-gray-500">
+            {manifesto.length}/1000 characters. Ballots show a short preview — keep your key points in the first two lines.
+          </p>
         </div>
         <div>
           <label htmlFor="photo" className="block text-xs font-bold uppercase tracking-widest text-gray-400 mb-2">
-            Photo <span className="text-gray-600">(optional, JPEG/PNG/WebP, max 2 MB)</span>
+            Photo <span className="text-gray-600">(optional, JPEG/PNG/WebP, max 2 MB — shown as a square, preview below is the exact crop)</span>
           </label>
           <input id="photo" type="file" accept="image/jpeg,image/png,image/webp" onChange={handlePhotoChange} className="text-sm file:mr-4 file:py-2 file:px-4 file:border-0 file:bg-gray-800 file:text-white file:font-bold file:uppercase file:tracking-widest hover:file:bg-gray-700 transition-colors" />
           {photoPreview && (

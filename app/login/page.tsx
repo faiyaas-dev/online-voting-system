@@ -50,8 +50,15 @@ function LoginContent() {
     }
 
     // No profile yet — voter first login: need institution_id to claim
+    // claim_voter_profile matches the exact (institution_id, email) roster row;
+    // this UUID is never guessed — it arrives via the college's voting link.
     if (!institutionId.trim()) {
-      setError('No profile found. Enter your institution ID to claim your voter profile.')
+      setError('No profile found. Paste the institution ID from your college voting link, or ask your institution admin for it.')
+      setLoading(false)
+      return
+    }
+    if (!/^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/.test(institutionId.trim())) {
+      setError('That institution ID does not look like a valid ID. Copy it exactly from your college voting link.')
       setLoading(false)
       return
     }
@@ -112,6 +119,7 @@ function LoginContent() {
               <label htmlFor="institutionId" className="text-xs font-bold uppercase tracking-widest text-gray-400">
                 Institution ID <span className="text-gray-600">(first login)</span>
               </label>
+              <p className="text-xs text-gray-500">From your college voting link — best opened directly from your college email so this fills in automatically.</p>
               <input
                 id="institutionId"
                 type="text"

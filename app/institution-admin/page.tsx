@@ -48,7 +48,7 @@ export default async function InstitutionAdminPage() {
               <RosterUploadForm institutionId={profile.institution_id!} />
               {importErrors.length > 0 && (
                 <div className="mt-8 border-t border-gray-800 pt-6">
-                  <h3 className="text-xs font-bold uppercase tracking-widest text-red-500 mb-4">Import Errors ({importErrors.length} rows)</h3>
+                  <h3 className="text-xs font-bold uppercase tracking-widest text-red-500 mb-4">Import Error History — latest {importErrors.length} rows (all uploads; per-upload detail appears after each upload above)</h3>
                   <div className="overflow-x-auto">
                     <table className="text-xs w-full text-left font-mono">
                       <thead className="text-gray-500 border-b border-gray-800">

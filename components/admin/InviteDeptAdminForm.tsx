@@ -40,7 +40,7 @@ export default function InviteDeptAdminForm({ institutionId }: { institutionId: 
           Authorization: `Bearer ${session.access_token}`,
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ email, department, institution_id: institutionId }),
+        body: JSON.stringify({ email: email.trim(), department: department.trim(), institution_id: institutionId }),
       }
     )
     const json = await res.json()
@@ -71,6 +71,7 @@ export default function InviteDeptAdminForm({ institutionId }: { institutionId: 
           className="border rounded px-3 py-2 text-sm flex-1"
         />
       </div>
+      <p className="text-xs text-gray-500">Spell the department exactly as it appears in the roster (e.g. “Mechanical Engineering”, not “Mech”) — a mismatch leaves the admin with an empty dashboard.</p>
       {error && <p className="text-red-600 text-sm">{error}</p>}
       {success && <p className="text-green-700 text-sm">{success}</p>}
       <button

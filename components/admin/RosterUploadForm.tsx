@@ -20,22 +20,45 @@ interface UploadResult {
   errors: number
 }
 
-function parsePreview(text: string) {
-  return text.split(/\r?\n/).filter(Boolean).slice(0, 6).map(line => {
-    const values: string[] = []
-    let value = ''
-    let quoted = false
-    for (let i = 0; i < line.length; i += 1) {
-      const char = line[i]
-      if (char === '"') quoted = !quoted
-      else if (char === ',' && !quoted) {
-        values.push(value.trim())
-        value = ''
+// Minimal RFC-4180-style parser: handles quoted commas, escaped ("") quotes,
+// and multiline quoted fields. Returns all rows; callers slice what they show.
+function parseCSV(text: string): string[][] {
+  const rows: string[][] = []
+  let row: string[] = []
+  let value = ''
+  let quoted = false
+  // Strip BOM so the first header compares cleanly.
+  const input = text.replace(/^\uFEFF/, '')
+  for (let i = 0; i < input.length; i += 1) {
+    const char = input[i]
+    if (quoted) {
+      if (char === '"') {
+        if (input[i + 1] === '"') { value += '"'; i += 1 }
+        else quoted = false
       } else value += char
-    }
-    values.push(value.trim())
-    return values
-  })
+    } else if (char === '"') {
+      // An opening quote only starts quoting at a field boundary; otherwise literal.
+      if (value === '') quoted = true
+      else value += char
+    } else if (char === ',') {
+      row.push(value.trim())
+      value = ''
+    } else if (char === '\n') {
+      row.push(value.trim())
+      value = ''
+      if (row.some(cell => cell !== '')) rows.push(row)
+      row = []
+    } else if (char === '\r') {
+      // Ignore; \n handles the break.
+    } else value += char
+  }
+  row.push(value.trim())
+  if (row.some(cell => cell !== '')) rows.push(row)
+  return rows
+}
+
+function parsePreview(text: string) {
+  return parseCSV(text).slice(0, 6)
 }
 
 export default function RosterUploadForm({ institutionId }: { institutionId: string }) {
@@ -137,7 +160,7 @@ export default function RosterUploadForm({ institutionId }: { institutionId: str
         <p className="text-xs text-gray-500">Required columns: <code>email, roll_no, department, year, full_name</code> (full_name optional)</p>
         {preview.length > 0 && (
           <div className="overflow-x-auto border border-gray-700 bg-gray-950 p-3">
-            <p className="mb-2 text-xs font-bold uppercase tracking-widest text-gray-400">Preview: first 5 rows</p>
+            <p className="mb-2 text-xs font-bold uppercase tracking-widest text-gray-400">Preview: first 5 data rows (headers + full file validated on upload)</p>
             <table className="w-full text-left text-xs">
               <tbody>
                 {preview.map((row, rowIndex) => (

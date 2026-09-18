@@ -2,8 +2,8 @@
 
 import { useEffect, useState } from 'react'
 
-function formatRemaining(milliseconds: number) {
-  if (milliseconds <= 0) return 'Voting closed'
+function formatRemaining(milliseconds: number, label: string, closedLabel: string) {
+  if (milliseconds <= 0) return closedLabel
 
   const totalMinutes = Math.floor(milliseconds / 60000)
   const days = Math.floor(totalMinutes / 1440)
@@ -11,11 +11,19 @@ function formatRemaining(milliseconds: number) {
   const minutes = totalMinutes % 60
 
   return days > 0
-    ? `Closes in ${days}d ${hours}h ${minutes}m`
-    : `Closes in ${hours}h ${minutes}m`
+    ? `${label} ${days}d ${hours}h ${minutes}m`
+    : `${label} ${hours}h ${minutes}m`
 }
 
-export default function LiveCountdown({ closesAt }: { closesAt: string }) {
+export default function LiveCountdown({
+  closesAt,
+  label = 'Closes in',
+  closedLabel = 'Voting closed',
+}: {
+  closesAt: string
+  label?: string
+  closedLabel?: string
+}) {
   const [remaining, setRemaining] = useState(() => new Date(closesAt).getTime() - Date.now())
 
   useEffect(() => {
@@ -27,7 +35,7 @@ export default function LiveCountdown({ closesAt }: { closesAt: string }) {
 
   return (
     <span role="status" aria-live="polite">
-      {formatRemaining(remaining)}
+      {formatRemaining(remaining, label, closedLabel)}
     </span>
   )
 }
