@@ -1,21 +1,71 @@
 'use client'
 
-import { useState, Suspense } from 'react'
+import { useState, useEffect, Suspense } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter, useSearchParams } from 'next/navigation'
+
+const UUID_RE = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/
+
+interface InstitutionOption {
+  id: string
+  name: string
+  slug: string
+}
 
 function LoginContent() {
   const supabase = createClient()
   const router = useRouter()
   const searchParams = useSearchParams()
-  const urlInstId = searchParams.get('institution') || searchParams.get('institutionId') || ''
-  
+  const rawUrlInstId = searchParams.get('institution') || searchParams.get('institutionId') || ''
+  // Only honour well-formed IDs from the link — anything else is treated as absent
+  // so we never render a raw-UUID textbox (P0-1).
+  const urlInstId = UUID_RE.test(rawUrlInstId.trim()) ? rawUrlInstId.trim() : ''
+
   const [email, setEmail] = useState('')
   const [sent, setSent] = useState(false)
   const [otp, setOtp] = useState('')
   const [institutionId, setInstitutionId] = useState(urlInstId)
+  const [institutionName, setInstitutionName] = useState('')
+  const [collegeQuery, setCollegeQuery] = useState('')
+  const [votingLink, setVotingLink] = useState('')
+  const [directory, setDirectory] = useState<InstitutionOption[]>([])
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
+
+  // College directory for the searchable dropdown, served by the public
+  // get_public_institutions() RPC (id, name, slug only — no roster, email,
+  // or voter PII). Works signed-out; the voting-link paste path below
+  // always works as a fallback.
+  useEffect(() => {
+    let cancelled = false
+    supabase.rpc('get_public_institutions')
+      .then(({ data }) => { if (!cancelled && data) setDirectory(data as InstitutionOption[]) })
+    return () => { cancelled = true }
+  }, [])
+
+  // Official institution NAME for the banner above the OTP step, resolved
+  // from the directory (never a raw UUID on screen). Fails closed — never blocks.
+  useEffect(() => {
+    if (!UUID_RE.test(institutionId)) { setInstitutionName(''); return }
+    const match = directory.find(o => o.id === institutionId)
+    if (match) setInstitutionName(match.name)
+  }, [institutionId, directory])
+
+  const query = collegeQuery.trim().toLowerCase()
+  const matches = query
+    ? directory.filter(o => o.name.toLowerCase().includes(query) || o.slug.toLowerCase().includes(query)).slice(0, 8)
+    : []
+
+  function applyVotingLink() {
+    setError('')
+    const m = votingLink.match(/[?&](?:institution|institutionId)=([0-9a-fA-F-]{36})/)
+    if (!m || !UUID_RE.test(m[1])) {
+      setError('That link does not contain a college reference. Open the voting link from your college email, or pick your college from the list.')
+      return
+    }
+    setInstitutionId(m[1])
+    setVotingLink('')
+  }
 
   async function sendOtp(e: React.FormEvent) {
     e.preventDefault()
@@ -49,16 +99,17 @@ function LoginContent() {
       return
     }
 
-    // No profile yet — voter first login: need institution_id to claim
+    // No profile yet — voter first login: need institution_id to claim.
     // claim_voter_profile matches the exact (institution_id, email) roster row;
-    // this UUID is never guessed — it arrives via the college's voting link.
+    // the ID is resolved from the college voting link or the college picker
+    // above — the student never types or sees a raw UUID (P0-1).
     if (!institutionId.trim()) {
-      setError('No profile found. Paste the institution ID from your college voting link, or ask your institution admin for it.')
+      setError('No profile found. Pick your college above, or open the voting link from your college email.')
       setLoading(false)
       return
     }
-    if (!/^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/.test(institutionId.trim())) {
-      setError('That institution ID does not look like a valid ID. Copy it exactly from your college voting link.')
+    if (!UUID_RE.test(institutionId.trim())) {
+      setError('That college reference looks incomplete. Re-open the voting link from your college email, or pick your college from the list.')
       setLoading(false)
       return
     }
@@ -114,20 +165,77 @@ function LoginContent() {
               maxLength={6}
             />
           </div>
-          {!urlInstId && (
+          {institutionId ? (
+            <div className="border border-gray-800 bg-transparent px-4 py-3 text-center">
+              <p className="text-[11px] font-bold uppercase tracking-widest text-gray-500">Voting at</p>
+              <p className="mt-1 text-lg font-bold text-white">{institutionName || 'Your college'}</p>
+              {!urlInstId && (
+                <button
+                  type="button"
+                  onClick={() => { setInstitutionId(''); setInstitutionName('') }}
+                  className="mt-1 min-h-[44px] w-full text-xs text-gray-500 uppercase tracking-widest hover:text-white transition-colors"
+                >
+                  Not your college? Change
+                </button>
+              )}
+            </div>
+          ) : (
             <div className="flex flex-col gap-2">
-              <label htmlFor="institutionId" className="text-xs font-bold uppercase tracking-widest text-gray-400">
-                Institution ID <span className="text-gray-600">(first login)</span>
+              <label htmlFor="collegeSearch" className="text-xs font-bold uppercase tracking-widest text-gray-400">
+                Your college <span className="text-gray-600">(first login)</span>
               </label>
-              <p className="text-xs text-gray-500">From your college voting link — best opened directly from your college email so this fills in automatically.</p>
+              <p className="text-xs text-gray-500">Find your college below, or open the voting link from your college email so this fills in automatically.</p>
               <input
-                id="institutionId"
+                id="collegeSearch"
                 type="text"
-                value={institutionId}
-                onChange={e => setInstitutionId(e.target.value)}
-                className="bg-transparent border-b border-gray-700 focus:border-white px-0 py-3 text-sm font-mono outline-none transition-colors"
-                placeholder="uuid of your institution"
+                value={collegeQuery}
+                onChange={e => setCollegeQuery(e.target.value)}
+                className="bg-transparent border-b border-gray-700 focus:border-white px-0 py-3 text-base outline-none transition-colors"
+                placeholder="Search by college name"
+                autoComplete="off"
               />
+              {query && (
+                <div className="border border-gray-800" role="listbox" aria-label="Matching colleges">
+                  {matches.length === 0 ? (
+                    <p className="px-4 py-3 text-sm text-gray-500">No matches yet — paste your voting link below instead.</p>
+                  ) : (
+                    matches.map(o => (
+                      <button
+                        key={o.id}
+                        type="button"
+                        role="option"
+                        aria-selected={false}
+                        onClick={() => { setInstitutionId(o.id); setInstitutionName(o.name); setCollegeQuery('') }}
+                        className="flex min-h-[44px] w-full flex-col justify-center px-4 py-3 text-left hover:bg-gray-900 transition-colors"
+                      >
+                        <span className="text-sm font-bold text-white">{o.name}</span>
+                        <span className="text-xs text-gray-500">{o.slug}</span>
+                      </button>
+                    ))
+                  )}
+                </div>
+              )}
+              <label htmlFor="votingLink" className="mt-2 text-xs font-bold uppercase tracking-widest text-gray-400">
+                Or paste your voting link
+              </label>
+              <div className="flex gap-2">
+                <input
+                  id="votingLink"
+                  type="text"
+                  value={votingLink}
+                  onChange={e => setVotingLink(e.target.value)}
+                  className="min-w-0 flex-1 bg-transparent border-b border-gray-700 focus:border-white px-0 py-3 text-sm outline-none transition-colors"
+                  placeholder="https://…?institution=…"
+                  autoComplete="off"
+                />
+                <button
+                  type="button"
+                  onClick={applyVotingLink}
+                  className="min-h-[44px] min-w-[44px] shrink-0 border border-gray-700 px-4 text-xs font-bold uppercase tracking-widest text-white hover:bg-gray-800 transition-colors"
+                >
+                  Use link
+                </button>
+              </div>
             </div>
           )}
           {error && <p className="text-red-500 text-sm">{error}</p>}
@@ -138,7 +246,7 @@ function LoginContent() {
           >
             {loading ? 'Verifying…' : 'Verify & Sign in'}
           </button>
-          <button type="button" onClick={() => setSent(false)} className="text-xs text-gray-500 uppercase tracking-widest hover:text-white transition-colors mt-2 text-center w-full">
+          <button type="button" onClick={() => setSent(false)} className="min-h-[44px] text-xs text-gray-500 uppercase tracking-widest hover:text-white transition-colors mt-2 text-center w-full">
             ← Change email
           </button>
         </form>

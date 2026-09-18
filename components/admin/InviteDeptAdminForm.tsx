@@ -1,15 +1,40 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
 
 export default function InviteDeptAdminForm({ institutionId }: { institutionId: string }) {
   const supabase = createClient()
   const [email, setEmail] = useState('')
   const [department, setDepartment] = useState('')
+  const [departments, setDepartments] = useState<string[]>([])
+  const [deptLoading, setDeptLoading] = useState(true)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
+
+  // Department allow-list sourced from the active roster (P1-5): the invite
+  // must match roster spelling exactly or the new admin gets an empty
+  // dashboard, so free text is replaced by this dropdown.
+  useEffect(() => {
+    let cancelled = false
+    async function loadDepartments() {
+      setDeptLoading(true)
+      const { data, error } = await supabase
+        .from('roster')
+        .select('department')
+        .eq('institution_id', institutionId)
+      if (!cancelled) {
+        if (!error && data) {
+          const distinct = Array.from(new Set(data.map(r => (r.department ?? '').trim()).filter(Boolean))).sort()
+          setDepartments(distinct)
+        }
+        setDeptLoading(false)
+      }
+    }
+    loadDepartments()
+    return () => { cancelled = true }
+  }, [institutionId])
 
   async function invite(e: React.FormEvent) {
     e.preventDefault()
@@ -54,30 +79,48 @@ export default function InviteDeptAdminForm({ institutionId }: { institutionId: 
   return (
     <form onSubmit={invite} className="flex flex-col gap-3">
       <div className="flex gap-3 flex-wrap">
-        <input
-          type="email"
-          required
-          value={email}
-          onChange={e => setEmail(e.target.value)}
-          placeholder="dept-admin@university.edu"
-          className="border rounded px-3 py-2 text-sm flex-1"
-        />
-        <input
-          type="text"
-          required
-          value={department}
-          onChange={e => setDepartment(e.target.value)}
-          placeholder="Department name"
-          className="border rounded px-3 py-2 text-sm flex-1"
-        />
+        <div className="flex flex-col flex-1 min-w-[200px]">
+          <label htmlFor="deptAdminEmail" className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-1">Admin email</label>
+          <input
+            id="deptAdminEmail"
+            type="email"
+            required
+            value={email}
+            onChange={e => setEmail(e.target.value)}
+            placeholder="dept-admin@university.edu"
+            className="bg-transparent border border-gray-800 text-white placeholder:text-gray-600 px-3 min-h-[44px] text-sm outline-none focus:border-white transition-colors"
+          />
+        </div>
+        <div className="flex flex-col flex-1 min-w-[200px]">
+          <label htmlFor="deptAdminDepartment" className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-1">Department</label>
+          <select
+            id="deptAdminDepartment"
+            required
+            value={department}
+            onChange={e => setDepartment(e.target.value)}
+            disabled={deptLoading || departments.length === 0}
+            className="bg-black border border-gray-800 text-white px-3 min-h-[44px] text-sm outline-none focus:border-white transition-colors disabled:text-gray-500"
+          >
+            <option value="">
+              {deptLoading ? 'Loading departments…' : departments.length === 0 ? 'No departments in roster yet' : 'Select department'}
+            </option>
+            {departments.map(d => (
+              <option key={d} value={d}>{d}</option>
+            ))}
+          </select>
+        </div>
       </div>
-      <p className="text-xs text-gray-500">Spell the department exactly as it appears in the roster (e.g. “Mechanical Engineering”, not “Mech”) — a mismatch leaves the admin with an empty dashboard.</p>
-      {error && <p className="text-red-600 text-sm">{error}</p>}
-      {success && <p className="text-green-700 text-sm">{success}</p>}
+      <p className="text-xs text-gray-500">
+        {departments.length === 0 && !deptLoading
+          ? 'Upload the roster first — departments appear here once students are imported.'
+          : 'Departments come from the uploaded roster, so the spelling always matches — no more empty dashboards from typos.'}
+      </p>
+      {error && <p className="text-red-400 text-sm">{error}</p>}
+      {success && <p className="text-green-400 text-sm">{success}</p>}
       <button
         type="submit"
         disabled={loading}
-        className="self-start bg-purple-600 text-white rounded px-4 py-2 text-sm disabled:opacity-50"
+        className="self-start min-h-[44px] bg-white text-black font-bold uppercase tracking-widest px-5 text-sm hover:bg-gray-200 transition-colors disabled:opacity-50"
       >
         {loading ? 'Inviting…' : 'Invite Department Admin'}
       </button>

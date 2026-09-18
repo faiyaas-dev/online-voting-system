@@ -50,22 +50,22 @@ export default function CandidateApprovalTable({ candidates }: { candidates: Can
 
   return (
     <div className="flex flex-col gap-3">
-      {error && <p role="alert" className="text-red-600 text-sm">{error}</p>}
+      {error && <p role="alert" className="text-red-400 text-sm">{error}</p>}
       {rows.map(c => (
-        <div key={c.id} className="border rounded p-3 bg-gray-50">
+        <div key={c.id} className="border border-gray-800 bg-transparent p-4">
           <div className="flex justify-between items-start">
             <div>
-              <p className="font-medium">{c.profiles?.full_name ?? 'Unknown'}</p>
-              <p className="text-xs text-gray-500">{c.profiles?.roll_no} · {c.profiles?.department}</p>
-              <p className="text-xs text-gray-400">Election: {c.elections?.title ?? '—'}</p>
+              <p className="font-medium text-white">{c.profiles?.full_name ?? 'Unknown'}</p>
+              <p className="text-xs text-gray-400">{c.profiles?.roll_no} · {c.profiles?.department}</p>
+              <p className="text-xs text-gray-500">Election: {c.elections?.title ?? '—'}</p>
               {c.manifesto && (
                 <div>
-                  <p className={`mt-1 text-sm text-gray-700 ${expandedId === c.id ? 'whitespace-pre-line' : 'line-clamp-3'}`}>{c.manifesto}</p>
+                  <p className={`mt-1 text-sm text-gray-300 ${expandedId === c.id ? 'whitespace-pre-line' : 'line-clamp-3'}`}>{c.manifesto}</p>
                   {c.manifesto.length > 140 && (
                     <button
                       type="button"
                       onClick={() => setExpandedId(prev => prev === c.id ? null : c.id)}
-                      className="mt-1 text-xs text-blue-700 underline"
+                      className="mt-1 min-h-[44px] text-xs text-gray-300 underline hover:text-white"
                     >
                       {expandedId === c.id ? 'Show less' : 'Read full manifesto'}
                     </button>
@@ -76,20 +76,20 @@ export default function CandidateApprovalTable({ candidates }: { candidates: Can
             <div className="flex gap-2 ml-4 flex-shrink-0">
               {confirmId === c.id ? (
                 <>
-                  <span className="text-xs text-gray-600 self-center">
+                  <span className="text-xs text-gray-400 self-center">
                     {confirmAction === 'approved' ? 'Approve?' : 'Reject?'}
                   </span>
                   <button
                     disabled={processing === c.id}
                     onClick={() => confirmAction && decide(c.id, confirmAction)}
-                    className="text-xs bg-green-600 text-white px-3 py-1 rounded disabled:opacity-50"
+                    className="min-h-[44px] min-w-[44px] text-xs bg-green-600 text-white px-3 disabled:opacity-50"
                   >
                     Confirm
                   </button>
                   <button
                     disabled={processing === c.id}
                     onClick={() => { setConfirmId(null); setConfirmAction(null) }}
-                    className="text-xs border border-gray-400 px-3 py-1 rounded disabled:opacity-50"
+                    className="min-h-[44px] min-w-[44px] text-xs border border-gray-700 text-gray-300 px-3 hover:bg-gray-800 disabled:opacity-50"
                   >
                     Cancel
                   </button>
@@ -99,14 +99,14 @@ export default function CandidateApprovalTable({ candidates }: { candidates: Can
                   <button
                     disabled={processing === c.id}
                     onClick={() => requestConfirm(c.id, 'approved')}
-                    className="text-xs bg-green-600 text-white px-3 py-1 rounded disabled:opacity-50"
+                    className="min-h-[44px] min-w-[44px] text-xs bg-green-600 text-white px-3 disabled:opacity-50"
                   >
                     Approve
                   </button>
                   <button
                     disabled={processing === c.id}
                     onClick={() => requestConfirm(c.id, 'rejected')}
-                    className="text-xs bg-red-600 text-white px-3 py-1 rounded disabled:opacity-50"
+                    className="min-h-[44px] min-w-[44px] text-xs bg-red-600 text-white px-3 disabled:opacity-50"
                   >
                     Reject
               </button>

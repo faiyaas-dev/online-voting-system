@@ -36,25 +36,25 @@ export default function ElectionTable({ elections }: { elections: Election[] }) 
 
   return (
     <div className="overflow-x-auto">
-      {error && <p role="alert" className="text-red-600 text-sm mb-2">{error}</p>}
-      <table className="w-full text-sm border-collapse">
+      {error && <p role="alert" className="text-red-400 text-sm mb-2">{error}</p>}
+      <table className="w-full text-sm border-collapse text-white">
         <thead>
-          <tr className="border-b text-left bg-gray-50">
-            <th className="py-2 px-2">Title</th>
-            <th className="py-2 px-2">Scope</th>
-            <th className="py-2 px-2">Status</th>
-            <th className="py-2 px-2">Actions</th>
+          <tr className="border-b border-gray-800 text-left text-gray-400">
+            <th className="py-2 px-2 font-normal">Title</th>
+            <th className="py-2 px-2 font-normal">Scope</th>
+            <th className="py-2 px-2 font-normal">Status</th>
+            <th className="py-2 px-2 font-normal">Actions</th>
           </tr>
         </thead>
         <tbody>
           {localElections.map(e => (
-            <tr key={e.id} className="border-b hover:bg-gray-50">
-              <td className="py-2 px-2">{e.title}</td>
-              <td className="py-2 px-2 text-gray-500 text-xs">
+            <tr key={e.id} className="border-b border-gray-800 hover:bg-gray-900 transition-colors">
+              <td className="py-2 px-2 text-white">{e.title}</td>
+              <td className="py-2 px-2 text-gray-400 text-xs">
                 {e.scope_department ?? 'All depts'} · {e.scope_year ?? 'All years'}
               </td>
               <td className="py-2 px-2">
-                <span className="text-xs font-medium">{e.status.replace('_', ' ')}</span>
+                <span className="text-xs font-medium text-white">{e.status.replace('_', ' ')}</span>
               </td>
               <td className="py-2 px-2 flex gap-2 flex-wrap">
                 {STATUS_TRANSITIONS[e.status]?.map(next => {
@@ -62,18 +62,18 @@ export default function ElectionTable({ elections }: { elections: Election[] }) 
                   if (confirmKey === key) {
                     return (
                       <span key={next} className="inline-flex gap-1 items-center">
-                        <span className="text-xs text-gray-600">→ {next.replace('_', ' ')}?</span>
+                        <span className="text-xs text-gray-400">→ {next.replace('_', ' ')}?</span>
                         <button
                           disabled={updating === e.id}
                           onClick={() => updateStatus(e.id, next)}
-                          className="text-xs border rounded px-2 py-0.5 bg-gray-800 text-white disabled:opacity-50"
+                          className="min-h-[44px] min-w-[44px] text-xs border border-gray-700 bg-white text-black px-2 disabled:opacity-50"
                         >
                           Confirm
                         </button>
                         <button
                           disabled={updating === e.id}
                           onClick={() => setConfirmKey(null)}
-                          className="text-xs border rounded px-2 py-0.5 hover:bg-gray-100 disabled:opacity-50"
+                          className="min-h-[44px] min-w-[44px] text-xs border border-gray-700 text-gray-300 px-2 hover:bg-gray-800 disabled:opacity-50"
                         >
                           Cancel
                         </button>
@@ -85,7 +85,7 @@ export default function ElectionTable({ elections }: { elections: Election[] }) 
                       key={next}
                       disabled={updating === e.id}
                       onClick={() => { setError(''); setConfirmKey(key) }}
-                      className="text-xs border rounded px-2 py-0.5 hover:bg-gray-100 disabled:opacity-50"
+                      className="min-h-[44px] min-w-[44px] text-xs border border-gray-700 text-white px-2 hover:bg-gray-800 disabled:opacity-50"
                     >
                       → {next.replace('_', ' ')}
                     </button>
