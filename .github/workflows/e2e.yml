@@ -1,0 +1,31 @@
+name: E2E (sharded, traced, merge-blocking)
+
+on:
+  push:
+    branches: ['main']
+  pull_request:
+    branches: ['main']
+
+jobs:
+  e2e:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: ['1/4', '2/4', '3/4', '4/4']
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v1
+        with:
+          bun-version: latest
+      - run: bun install
+      - run: bunx playwright install --with-deps chromium
+      - name: Run Playwright shard ${{ matrix.shard }}
+        run: bunx playwright test --shard=${{ matrix.shard }}
+        env:
+          PLAYWRIGHT_TRACE: on-first-retry
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: traces-${{ strategy.job-index }}
+          path: test-results/

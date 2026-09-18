@@ -19,6 +19,12 @@ export default defineConfig({
       name: 'chromium',
       use: { ...devices['Desktop Chrome'] },
     },
+    {
+      // 390x844 iPhone-14 ballot contract (persona A1): Vote Now must be
+      // usable one-handed. Specs opt in per-file via test.use({ viewport }).
+      name: 'mobile-390',
+      use: { ...devices['iPhone 14'] },
+    },
   ],
   webServer: {
     command: 'bun run dev',
