@@ -4,6 +4,45 @@ import { useState, useEffect, useRef, useCallback } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 
+const PENDING_KEY = 'ovs_signup_pending'
+
+function friendlyAuthError(message: string): string {
+  const m = message.toLowerCase()
+  if (m.includes('expired') || m.includes('invalid') || m.includes('otp_expired')) {
+    return 'That code is expired or already used (email links are single-use and Gmail sometimes pre-opens them). Tap “Resend code” below for a fresh one.'
+  }
+  return message
+}
+
+function Steps({ step }: { step: 1 | 2 | 3 }) {
+  const items = [
+    { n: 1, title: 'Enter details', sub: 'College + admin email' },
+    { n: 2, title: 'Check email', sub: '6-digit code' },
+    { n: 3, title: 'Verify & create', sub: 'Finish setup' },
+  ]
+  return (
+    <ol className="grid grid-cols-3 gap-2" aria-label="Registration progress">
+      {items.map(o => {
+        const active = o.n === step
+        const done = o.n < step
+        return (
+          <li
+            key={o.n}
+            aria-current={active ? 'step' : undefined}
+            className={`border px-3 py-2 text-center ${active ? 'border-white bg-gray-900' : done ? 'border-green-700' : 'border-gray-800'}`}
+          >
+            <p className={`text-[11px] font-bold uppercase tracking-widest ${active ? 'text-white' : done ? 'text-green-400' : 'text-gray-500'}`}>
+              Step {o.n}{done ? ' ✓' : ''}
+            </p>
+            <p className="mt-0.5 text-xs font-bold text-white">{o.title}</p>
+            <p className="text-[11px] text-gray-500">{o.sub}</p>
+          </li>
+        )
+      })}
+    </ol>
+  )
+}
+
 // Institution self-serve signup:
 // 1. Enter institution name + admin email → send OTP
 // 2. Verify OTP → create institution row + institution_admin profile
@@ -17,14 +56,54 @@ export default function SignupPage() {
   const [sent, setSent] = useState(false)
   const [otp, setOtp] = useState('')
   const [error, setError] = useState('')
+  const [info, setInfo] = useState('')
   const [loading, setLoading] = useState(false)
+  const [resending, setResending] = useState(false)
+  const [cooldown, setCooldown] = useState(0)
   const [slugTaken, setSlugTaken] = useState(false)
   const [slugAvailability, setSlugAvailability] = useState<'available' | 'taken' | null>(null)
   const slugTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+  const cooldownRef = useRef<NodeJS.Timeout | null>(null)
 
   function toSlug(val: string) {
     return val.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
   }
+
+  // Restore pending signup after magic-link round-trip (page state is lost
+  // on the email-link redirect, so persist to sessionStorage before send).
+  useEffect(() => {
+    try {
+      const raw = sessionStorage.getItem(PENDING_KEY)
+      if (!raw) return
+      const p = JSON.parse(raw) as { institutionName?: string; slug?: string; adminEmail?: string; sent?: boolean }
+      if (p.institutionName) setInstitutionName(p.institutionName)
+      if (p.slug) setSlug(p.slug)
+      if (p.adminEmail) setAdminEmail(p.adminEmail)
+      if (p.sent) {
+        setSent(true)
+        setInfo('Email confirmed — enter the 6-digit code from your email, or tap Resend code for a fresh one, then Verify & Create.')
+      }
+    } catch { /* corrupted storage — start fresh */ }
+    // If the magic link already established a session, surface it instead of
+    // leaving the user on a dead form.
+    supabase.auth.getUser().then(({ data }) => {
+      if (data.user) {
+        setSent(s => {
+          try {
+            const raw = sessionStorage.getItem(PENDING_KEY)
+            if (raw && JSON.parse(raw).sent) return true
+          } catch { /* ignore */ }
+          return s
+        })
+      }
+    })
+  }, [supabase])
+
+  useEffect(() => {
+    if (cooldown <= 0) return
+    cooldownRef.current = setTimeout(() => setCooldown(c => c - 1), 1000)
+    return () => { if (cooldownRef.current) clearTimeout(cooldownRef.current) }
+  }, [cooldown])
 
   // Debounced slug availability check — does NOT cost an OTP round-trip.
   // get_public_institutions() takes no arguments (see migration
@@ -51,25 +130,63 @@ export default function SignupPage() {
     return () => { if (slugTimeoutRef.current) clearTimeout(slugTimeoutRef.current) }
   }, [slug, checkSlugAvailability])
 
+  function persistPending(willSend: boolean) {
+    try {
+      sessionStorage.setItem(PENDING_KEY, JSON.stringify({ institutionName, slug, adminEmail, sent: willSend }))
+    } catch { /* private mode — non-blocking */ }
+  }
+
   async function sendOtp(e: React.FormEvent) {
     e.preventDefault()
     setError('')
+    setInfo('')
     if (!institutionName.trim() || !slug.trim()) { setError('Institution name and slug required'); return }
     if (slugTaken) { setError('This slug is already taken. Please choose another.'); return }
     setLoading(true)
-    const { error } = await supabase.auth.signInWithOtp({ email: adminEmail, options: { shouldCreateUser: true } })
+    const { error } = await supabase.auth.signInWithOtp({
+      email: adminEmail,
+      options: {
+        shouldCreateUser: true,
+        // next=/signup brings the magic-link click BACK to this form instead
+        // of dumping the user on the homepage with their typing lost.
+        emailRedirectTo: `${window.location.origin}/auth/callback?next=/signup`,
+      },
+    })
     setLoading(false)
-    if (error) { setError(error.message); return }
+    if (error) { setError(friendlyAuthError(error.message)); return }
+    persistPending(true)
     setSent(true)
+    setCooldown(60)
+    setInfo('Code sent! Check your inbox for the 6-digit code and enter it below. Can’t find a code? Click the email link instead — it brings you back here.')
+  }
+
+  async function resendCode() {
+    if (cooldown > 0 || resending) return
+    setError('')
+    setInfo('')
+    setResending(true)
+    const { error } = await supabase.auth.signInWithOtp({
+      email: adminEmail,
+      options: {
+        shouldCreateUser: true,
+        emailRedirectTo: `${window.location.origin}/auth/callback?next=/signup`,
+      },
+    })
+    setResending(false)
+    if (error) { setError(friendlyAuthError(error.message)); return }
+    persistPending(true)
+    setCooldown(60)
+    setInfo('Fresh code sent — only the newest code works, older ones stop working.')
   }
 
   async function verifyAndCreate(e: React.FormEvent) {
     e.preventDefault()
     setError('')
+    setInfo('')
     setLoading(true)
 
-    const { error: otpError } = await supabase.auth.verifyOtp({ email: adminEmail, token: otp, type: 'email' })
-    if (otpError) { setError(otpError.message); setLoading(false); return }
+    const { error: otpError } = await supabase.auth.verifyOtp({ email: adminEmail, token: otp.trim(), type: 'email' })
+    if (otpError) { setError(friendlyAuthError(otpError.message)); setLoading(false); return }
 
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) { setError('Auth failed'); setLoading(false); return }
@@ -82,6 +199,7 @@ export default function SignupPage() {
 
     setLoading(false)
     if (rpcError) { setError(rpcError.message); return }
+    try { sessionStorage.removeItem(PENDING_KEY) } catch { /* ignore */ }
     router.push('/institution-admin')
   }
 
@@ -89,6 +207,7 @@ export default function SignupPage() {
     <main className="flex items-center justify-center min-h-screen bg-black text-white p-6">
       <div className="w-full max-w-md p-8 bg-black border border-gray-800 space-y-6">
         <h1 className="text-3xl font-extrabold uppercase tracking-widest text-center">Register</h1>
+        <Steps step={sent ? 3 : 1} />
         {!sent ? (
           <form onSubmit={sendOtp} className="flex flex-col gap-6 mt-4">
             <div className="flex flex-col gap-2">
@@ -137,6 +256,7 @@ export default function SignupPage() {
               />
             </div>
             {error && <p className="text-red-500 text-sm">{error}</p>}
+            {info && <p className="text-green-400 text-sm">{info}</p>}
             <button
               type="submit"
               disabled={loading}
@@ -144,10 +264,12 @@ export default function SignupPage() {
             >
               {loading ? 'Sending…' : 'Send OTP'}
             </button>
+            <p className="text-xs text-gray-500 text-center">Step 1 of 3 — we email you a 6-digit code. It expires in 1 hour; only the newest code works.</p>
           </form>
         ) : (
           <form onSubmit={verifyAndCreate} className="flex flex-col gap-6 mt-4">
-            <p className="text-sm text-gray-400 text-center">OTP sent to <strong className="text-white">{adminEmail}</strong></p>
+            <p className="text-sm text-gray-400 text-center">OTP sent to <strong className="text-white">{adminEmail}</strong> for <strong className="text-white">{institutionName}</strong></p>
+            <p className="text-xs text-gray-500 text-center">Enter the 6-digit code below. Only clicked the email link? Good — you are back here, just enter the code or resend.</p>
             <div className="flex flex-col gap-2">
               <label htmlFor="otp" className="text-xs font-bold uppercase tracking-widest text-gray-400">OTP code</label>
               <input
@@ -159,15 +281,29 @@ export default function SignupPage() {
                 className="bg-transparent border-b border-gray-700 focus:border-white px-0 py-3 text-2xl tracking-widest outline-none transition-colors text-center"
                 placeholder="------"
                 maxLength={6}
+                inputMode="numeric"
+                autoComplete="one-time-code"
               />
             </div>
             {error && <p className="text-red-500 text-sm">{error}</p>}
+            {info && <p className="text-green-400 text-sm">{info}</p>}
             <button
               type="submit"
               disabled={loading}
               className="mt-4 bg-white text-black font-bold uppercase tracking-widest py-4 hover:bg-gray-200 transition-colors disabled:opacity-50"
             >
               {loading ? 'Creating…' : 'Verify & Create Institution'}
+            </button>
+            <button
+              type="button"
+              onClick={resendCode}
+              disabled={cooldown > 0 || resending}
+              className="min-h-[44px] text-xs text-gray-400 uppercase tracking-widest hover:text-white transition-colors disabled:opacity-50"
+            >
+              {resending ? 'Resending…' : cooldown > 0 ? `Resend code in ${cooldown}s` : 'Resend code'}
+            </button>
+            <button type="button" onClick={() => { setSent(false); setError(''); setInfo('') }} className="min-h-[44px] text-xs text-gray-500 uppercase tracking-widest hover:text-white transition-colors text-center w-full">
+              ← Change details
             </button>
           </form>
         )}
