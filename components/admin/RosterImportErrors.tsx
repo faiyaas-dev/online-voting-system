@@ -32,7 +32,7 @@ interface Props {
  * form fetched 500 rows and the admin page showed 50.
  */
 export default function RosterImportErrors({ institutionId, refreshKey = 0, title = 'Import Errors' }: Props) {
-  const supabase = createClient()
+  const [supabase] = useState(() => createClient())
   const [rows, setRows] = useState<RosterImportError[]>([])
   const [total, setTotal] = useState(0)
   const [page, setPage] = useState(0)
@@ -67,7 +67,7 @@ export default function RosterImportErrors({ institutionId, refreshKey = 0, titl
     }
     fetchPage()
     return () => { cancelled = true }
-  }, [institutionId, refreshKey, page])
+  }, [institutionId, refreshKey, page, supabase])
 
   const grouped = rows.reduce<Record<string, RosterImportError[]>>((acc, row) => {
     if (!acc[row.error_reason]) acc[row.error_reason] = []

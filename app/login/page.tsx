@@ -13,7 +13,7 @@ interface InstitutionOption {
 }
 
 function LoginContent() {
-  const supabase = createClient()
+  const [supabase] = useState(() => createClient())
   const router = useRouter()
   const searchParams = useSearchParams()
   const rawUrlInstId = searchParams.get('institution') || searchParams.get('institutionId') || ''
@@ -41,7 +41,7 @@ function LoginContent() {
     supabase.rpc('get_public_institutions')
       .then(({ data }) => { if (!cancelled && data) setDirectory(data as InstitutionOption[]) })
     return () => { cancelled = true }
-  }, [])
+  }, [supabase])
 
   // Official institution NAME for the banner above the OTP step, resolved
   // from the directory (never a raw UUID on screen). Fails closed — never blocks.

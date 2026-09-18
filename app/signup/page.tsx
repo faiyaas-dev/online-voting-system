@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 
@@ -8,7 +8,7 @@ import { useRouter } from 'next/navigation'
 // 1. Enter institution name + admin email → send OTP
 // 2. Verify OTP → create institution row + institution_admin profile
 export default function SignupPage() {
-  const supabase = createClient()
+  const [supabase] = useState(() => createClient())
   const router = useRouter()
 
   const [institutionName, setInstitutionName] = useState('')
@@ -30,7 +30,7 @@ export default function SignupPage() {
   // get_public_institutions() takes no arguments (see migration
   // 20260918000001): fetch the public directory once and match the slug
   // client-side instead of passing a server-side filter that does not exist.
-  async function checkSlugAvailability(value: string) {
+  const checkSlugAvailability = useCallback(async (value: string) => {
     const trimmed = value.trim().toLowerCase()
     if (!trimmed) { setSlugAvailability(null); setSlugTaken(false); return }
     try {
@@ -43,13 +43,13 @@ export default function SignupPage() {
       setSlugAvailability(null)
       setSlugTaken(false)
     }
-  }
+  }, [supabase])
 
   useEffect(() => {
     if (slugTimeoutRef.current) clearTimeout(slugTimeoutRef.current)
     slugTimeoutRef.current = setTimeout(() => { void checkSlugAvailability(slug) }, 500)
     return () => { if (slugTimeoutRef.current) clearTimeout(slugTimeoutRef.current) }
-  }, [slug])
+  }, [slug, checkSlugAvailability])
 
   async function sendOtp(e: React.FormEvent) {
     e.preventDefault()
@@ -112,10 +112,6 @@ export default function SignupPage() {
                 value={slug}
                 onChange={e => {
                   setSlug(e.target.value)
-                  // Debounced availability check — no OTP round-trip
-                  if (slugTimeoutRef.current) clearTimeout(slugTimeoutRef.current)
-                  const next = e.target.value
-                  slugTimeoutRef.current = setTimeout(() => { void checkSlugAvailability(next) }, 500)
                 }}
                 className="bg-transparent border-b border-gray-700 focus:border-white px-0 py-3 text-sm font-mono outline-none transition-colors"
                 placeholder="state-university"

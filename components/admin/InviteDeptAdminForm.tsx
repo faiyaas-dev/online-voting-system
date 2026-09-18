@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
 
 export default function InviteDeptAdminForm({ institutionId }: { institutionId: string }) {
-  const supabase = createClient()
+  const [supabase] = useState(() => createClient())
   const [email, setEmail] = useState('')
   const [department, setDepartment] = useState('')
   const [departments, setDepartments] = useState<string[]>([])
@@ -34,7 +34,7 @@ export default function InviteDeptAdminForm({ institutionId }: { institutionId: 
     }
     loadDepartments()
     return () => { cancelled = true }
-  }, [institutionId])
+  }, [institutionId, supabase])
 
   async function invite(e: React.FormEvent) {
     e.preventDefault()

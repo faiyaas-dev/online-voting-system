@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
+import Image from 'next/image'
 import Link from 'next/link'
 
 const MAX_FILE_SIZE = 2 * 1024 * 1024 // 2 MB
@@ -214,7 +215,7 @@ export default function NominatePage({ params }: { params: { id: string } }) {
           {photoPreview && (
             <div className="mt-4 rounded border border-gray-800 bg-gray-950 p-3">
               <p className="mb-2 text-[10px] font-bold uppercase tracking-widest text-gray-500">Preview</p>
-              <img src={photoPreview} alt="Selected candidate headshot preview" className="h-32 w-32 object-cover border border-gray-700 bg-black" />
+              <Image src={photoPreview} alt="Selected candidate headshot preview" width={128} height={128} unoptimized className="h-32 w-32 object-cover border border-gray-700 bg-black" />
             </div>
           )}
           {photoError && <p className="text-red-500 text-sm mt-2">{photoError}</p>}
