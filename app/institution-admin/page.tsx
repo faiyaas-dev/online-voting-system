@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import RosterUploadForm from '@/components/admin/RosterUploadForm'
+import RosterImportErrors from '@/components/admin/RosterImportErrors'
 import InviteDeptAdminForm from '@/components/admin/InviteDeptAdminForm'
 import CreateElectionForm from '@/components/admin/CreateElectionForm'
 import ElectionTable from '@/components/admin/ElectionTable'
@@ -20,18 +21,16 @@ export default async function InstitutionAdminPage() {
 
   if (!profile || profile.role !== 'institution_admin') redirect('/')
 
-  const [electionsRes, pendingCandidatesRes, errorsRes] = await Promise.all([
+  const [electionsRes, pendingCandidatesRes] = await Promise.all([
     supabase.from('elections').select('*').order('created_at', { ascending: false }),
     supabase
       .from('candidates')
       .select('*, profiles(full_name, roll_no, department), elections(title)')
       .eq('status', 'pending'),
-    supabase.from('roster_import_errors').select('*').order('imported_at', { ascending: false }).limit(50),
   ])
 
   const elections: Election[] = electionsRes.data ?? []
   const pendingCandidates = pendingCandidatesRes.data ?? []
-  const importErrors = errorsRes.data ?? []
 
   return (
     <main className="min-h-screen bg-black text-white p-6 md:p-12">
@@ -46,31 +45,10 @@ export default async function InstitutionAdminPage() {
             <section className="border border-gray-800 p-6 md:p-8 space-y-6 bg-transparent">
               <h2 className="text-xl font-bold uppercase tracking-widest text-gray-300">Roster Upload</h2>
               <RosterUploadForm institutionId={profile.institution_id!} />
-              {importErrors.length > 0 && (
-                <div className="mt-8 border-t border-gray-800 pt-6">
-                  <h3 className="text-xs font-bold uppercase tracking-widest text-red-500 mb-4">Import Error History — latest {importErrors.length} rows (all uploads; per-upload detail appears after each upload above)</h3>
-                  <div className="overflow-x-auto">
-                    <table className="text-xs w-full text-left font-mono">
-                      <thead className="text-gray-500 border-b border-gray-800">
-                        <tr>
-                          <th className="py-2 px-2 font-normal">Row</th>
-                          <th className="py-2 px-2 font-normal">Reason</th>
-                          <th className="py-2 px-2 font-normal">Data</th>
-                        </tr>
-                      </thead>
-                      <tbody className="text-gray-300">
-                        {importErrors.map(e => (
-                          <tr key={e.id} className="border-b border-gray-800 hover:bg-gray-900 transition-colors">
-                            <td className="py-2 px-2">{e.row_number}</td>
-                            <td className="py-2 px-2 text-red-400">{e.error_reason}</td>
-                            <td className="py-2 px-2 truncate max-w-[200px]">{JSON.stringify(e.raw_row)}</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-              )}
+              <div className="mt-8 border-t border-gray-800 pt-6">
+                <h3 className="text-xs font-bold uppercase tracking-widest text-red-500 mb-4">Import Error History — all uploads (per-upload detail appears after each upload above)</h3>
+                <RosterImportErrors institutionId={profile.institution_id!} title="Error history" />
+              </div>
             </section>
 
             {/* ── Invite Department Admin ── */}
