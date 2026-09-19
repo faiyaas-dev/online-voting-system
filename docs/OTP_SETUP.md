@@ -82,6 +82,22 @@ or **Resend code** is the recovery path.
 6. Open `/login` in a private window and repeat the flow.
 7. Repeat after deploying to production using the production URL.
 
+## 6. Configure GitHub Actions E2E tests
+
+The E2E workflow starts a local Next.js server in GitHub Actions, so it needs
+the same public Supabase values as the browser application. Add these as
+repository secrets under **Settings → Secrets and variables → Actions**:
+
+```text
+NEXT_PUBLIC_SUPABASE_URL
+NEXT_PUBLIC_SUPABASE_ANON_KEY
+```
+
+Use only the public URL and public anon/publishable key. Never add a
+`service_role` or `sb_secret_` key. The workflow validates these secrets before
+starting Playwright so a missing value fails immediately instead of appearing
+as a web-server timeout.
+
 ## Error diagnosis
 
 | Symptom | Action |
