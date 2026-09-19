@@ -39,8 +39,10 @@ test.describe('Login — institution resolution', () => {
     // Regression: context-loss forcing UUID re-entry mid-flow.
     const institutionId = '11111111-1111-4111-8111-111111111111';
     await gotoOtpStep(page, ownedEmail);
-    // Navigate with the deep link while preserving the OTP-step state is
-    // driven by the URL param read at login/page.tsx:11.
+    // Start a fresh deep-link form instead of restoring the pending OTP step
+    // created by the setup helper.
+    await page.evaluate(() => sessionStorage.removeItem('ovs_login_pending'));
+    // Navigate with the deep link; the URL param is read at login/page.tsx:11.
     await page.goto(`/login?institution=${institutionId}`);
     await expect(page.getByRole('heading', { name: 'Sign in' })).toBeVisible();
     await page.getByLabel('Email address').fill(ownedEmail);
