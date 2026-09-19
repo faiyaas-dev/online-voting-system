@@ -1,0 +1,352 @@
+@startuml 01-UseCase-Diagram
+' Use Case Diagram - Who can do what? Simple terms.
+left to right direction
+actor Visitor as visitor
+actor Voter as voter
+actor "Institution Admin" as instAdmin
+actor "Department Admin" as deptAdmin
+actor "Platform Admin" as platAdmin
+
+rectangle "Online Voting System" {
+  usecase "Sign up with OTP" as UC1
+  usecase "Create Institution" as UC2
+  usecase "Claim voter profile" as UC3
+  usecase "View matching elections" as UC4
+  usecase "Self-nominate" as UC5
+  usecase "Cast vote\n1 per election" as UC6
+  usecase "View results after close" as UC7
+  usecase "Upload roster CSV" as UC8
+  usecase "Create any election" as UC9
+  usecase "Approve any candidate" as UC10
+  usecase "Invite Dept Admin" as UC11
+  usecase "View audit report" as UC12
+  usecase "Create own-dept election" as UC13
+  usecase "Approve own-dept candidate" as UC14
+  usecase "View total counts only" as UC15
+}
+
+visitor --> UC1
+visitor --> UC2
+voter --> UC1
+voter --> UC3
+voter --> UC4
+voter --> UC5
+voter --> UC6
+voter --> UC7
+instAdmin --> UC8
+instAdmin --> UC9
+instAdmin --> UC10
+instAdmin --> UC11
+instAdmin --> UC12
+deptAdmin --> UC13
+deptAdmin --> UC14
+platAdmin --> UC15
+
+note bottom of UC6
+  Database stops 2nd vote with
+  UNIQUE(voter_id, election_id)
+end note
+@enduml
+
+@startuml 02-Class-Diagram
+' Class Diagram - Building blocks. Simple terms.
+class Institution {
+  + uuid id
+  + string name
+  + string slug
+}
+class Profile {
+  + uuid id
+  + uuid institution_id
+  + string role
+  + string department
+  + int year
+  + string roll_no
+}
+class Roster {
+  + uuid id
+  + string roll_no
+  + string email
+  + string department
+  + int year
+}
+class Election {
+  + uuid id
+  + string title
+  + string scope_department
+  + int scope_year
+  + string status
+  + datetime opens_at
+  + datetime closes_at
+}
+class Candidate {
+  + uuid id
+  + string manifesto
+  + string photo_path
+  + string status
+}
+class Vote {
+  + uuid id
+  + uuid voter_id
+  + uuid candidate_id
+  + datetime cast_at
+}
+class RosterImportError {
+  + int row_number
+  + json raw_row
+  + string error_reason
+}
+
+Institution "1" --> "many" Profile : has
+Institution "1" --> "many" Roster : owns
+Institution "1" --> "many" Election : runs
+Election "1" --> "many" Candidate : has
+Election "1" --> "many" Vote : receives
+Profile "1" --> "many" Vote : casts
+Profile "1" --> "many" Candidate : nominates
+Candidate "1" --> "many" Vote : gets
+@enduml
+
+@startuml 03-ER-Diagram
+' ER Diagram - How tables link. Simple terms.
+entity institutions {
+  * id : uuid <<PK>>
+  --
+  * name : text
+  * slug : text <<UK>>
+}
+entity profiles {
+  * id : uuid <<PK,FK>>
+  --
+  institution_id : uuid <<FK>>
+  * role : text
+  department : text
+  year : int
+  roll_no : text
+}
+entity roster {
+  * id : uuid <<PK>>
+  --
+  * institution_id : uuid <<FK>>
+  * email : text
+  * roll_no : text
+  * department : text
+  * year : int
+}
+entity elections {
+  * id : uuid <<PK>>
+  --
+  * institution_id : uuid <<FK>>
+  * title : text
+  scope_department : text
+  scope_year : int
+  * status : text
+}
+entity candidates {
+  * id : uuid <<PK>>
+  --
+  * election_id : uuid <<FK>>
+  * user_id : uuid <<FK>>
+  * status : text
+}
+entity votes {
+  * id : uuid <<PK>>
+  --
+  * voter_id : uuid <<FK>>
+  * election_id : uuid <<FK>>
+  * candidate_id : uuid <<FK>>
+}
+entity roster_import_errors {
+  * id : uuid <<PK>>
+  --
+  * institution_id : uuid <<FK>>
+  * row_number : int
+  * raw_row : json
+  * error_reason : text
+}
+
+institutions ||--o{ profiles
+institutions ||--o{ roster
+institutions ||--o{ elections
+institutions ||--o{ roster_import_errors
+profiles ||--o{ candidates
+profiles ||--o{ votes
+elections ||--o{ candidates
+elections ||--o{ votes
+candidates ||--o{ votes
+@enduml
+
+@startuml 04-Sequence-Institution-Signup
+' Sequence - New college joins. Simple terms.
+title New college joins (Visitor becomes Admin)
+actor Visitor
+participant "Next.js Web App" as Web
+participant "Supabase Auth" as Auth
+participant "DB RPC" as DB
+
+Visitor -> Web : Enter college name + email
+Web -> Auth : Send OTP magic link
+Auth --> Visitor : Email with login link
+Visitor -> Web : Click magic link
+Web -> DB : create_institution_and_admin(name, slug)
+activate DB
+DB -> DB : 1. Create institutions row\n2. Make user institution_admin
+deactivate DB
+DB --> Web : Return institution_id + role
+Web --> Visitor : Show Institution Admin dashboard
+@enduml
+
+@startuml 05-Sequence-Vote
+' Sequence - Student votes. Simple terms.
+title Student login and vote (most important flow)
+actor Voter
+participant "Next.js Web App" as Web
+participant "Supabase Auth" as Auth
+participant "Supabase Postgres" as DB
+
+Voter -> Web : Enter email
+Web -> Auth : signInWithOtp(email)
+Auth --> Voter : Magic link
+Voter -> Web : Click link
+Web -> DB : claim_voter_profile(institution_id)
+activate DB
+DB -> DB : Check email in roster table?
+alt Email NOT in roster
+  DB --> Web : Error - Not on list
+  Web --> Voter : Show - Contact your college
+else Email found
+  DB --> Web : Create voter profile with dept + year
+  Web -> DB : Get elections where dept/year matches
+  DB --> Web : List of eligible elections
+  Web --> Voter : Show Vote button
+  Voter -> Web : Choose candidate + Submit
+  DB -> DB : Check 1. status = voting_open?\n2. Already voted?
+  alt Already voted or closed
+    DB --> Web : Reject vote
+    Web --> Voter : Show error
+  else OK
+    DB -> DB : Insert into votes
+    DB --> Web : Vote saved
+    Web --> Voter : Show Success
+  end
+end
+deactivate DB
+@enduml
+
+@startuml 06-Sequence-Nomination
+' Sequence - Nomination and approval. Simple terms.
+title Nomination and approval
+actor Voter
+actor "Admin" as Admin
+participant "Web App" as Web
+participant "Database" as DB
+participant "Photo Storage" as Store
+
+Voter -> Web : Fill form - manifesto + photo
+Web -> Store : Upload photo to candidate-photos/
+Store --> Web : Photo saved
+Web -> DB : Insert candidate status = pending
+DB --> Web : Nomination saved
+Admin -> Web : Open pending list
+Web -> DB : Show pending candidates
+DB --> Web : List
+Admin -> Web : Click Approve / Reject
+Web -> DB : Update candidate status
+DB --> Voter : Now visible on ballot if approved
+@enduml
+
+@startuml 07-Activity-Voting
+' Activity - Step by step voting. Simple terms.
+title Vote casting activity - step by step
+start
+:Open website;
+:Login with email OTP;
+if (Email in college roster?) then (no)
+  :Show error - Not eligible;
+  stop
+else (yes)
+  :Show my elections;
+endif
+if (Election status?) then (draft)
+  :Wait - not started;
+  stop
+elseif (nomination_open?) then
+  :You can nominate yourself;
+elseif (voting_open?) then
+  if (Am I dept/year match?) then (no)
+    :Hide ballot;
+    stop
+  else (yes)
+    :Show approved candidates;
+    :Click Vote;
+    if (Already voted?) then (yes)
+      :Block - One vote only;
+      stop
+    else (no)
+      :Save vote;
+    endif
+    :Results hidden till close;
+    if (Election closed?) then (yes)
+      :Show tally via get_election_results;
+    else (no)
+      :Wait for close;
+    endif
+  endif
+else (closed)
+  :Show final results;
+endif
+stop
+@enduml
+
+@startuml 08-State-Diagram
+' State - Election life + Candidate life. Simple terms.
+title Election and Candidate life
+[*] --> draft : Admin creates
+draft --> nomination_open : Open nominations
+nomination_open --> voting_open : Close nominations\nOpen voting
+voting_open --> closed : Close voting\nAuto-close by time
+closed --> [*]
+
+state candidates {
+  [*] --> pending : Voter nominates
+  pending --> approved : Admin approves
+  pending --> rejected : Admin rejects
+}
+
+note bottom of closed
+  You can vote only in voting_open
+  You see results only in closed
+end note
+@enduml
+
+@startuml 09-Component-Diagram
+' Component - How parts connect. Simple terms.
+title How parts connect - Next.js + Supabase
+package "User Browser" {
+  [Next.js 14 Pages\nlogin, elections, vote,\ninstitution-admin, platform-admin] as UI
+}
+package "Netlify Hosting" {
+  [Web Frontend] as Netlify
+}
+package "Supabase Backend" {
+  [Auth\nOTP magic link] as AUTH
+  database "Postgres + RLS\n7 tables + 4 RPCs" as PG
+  [Storage\ncandidate-photos] as ST
+  [Edge Function\nroster-csv-validate] as EF
+}
+
+UI --> AUTH : 1. Login
+UI --> PG : 2. Read elections\n3. Insert votes/candidates
+UI --> ST : 4. Upload photo
+UI --> EF : 5. Upload CSV
+EF --> PG : Save roster + errors
+PG --> UI : Enforce rules,\nblock double vote
+
+note bottom of PG
+  RPCs:
+  create_institution_and_admin()
+  claim_voter_profile()
+  get_election_results()
+  get_platform_metrics()
+end note
+@enduml
