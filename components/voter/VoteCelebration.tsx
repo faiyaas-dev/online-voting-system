@@ -50,6 +50,7 @@ export default function VoteCelebration({ electionTitle }: { electionTitle: stri
         <p className="text-zinc-400 max-w-md mx-auto text-sm leading-relaxed">
           Your vote for <span className="font-semibold text-white">{electionTitle}</span> has been irreversibly logged to the institution ledger.
         </p>
+        <p className="text-sm font-semibold text-blue-300">Vote cast successfully.</p>
 
         {/* Shareable Badge */}
         <div className="my-6 inline-block rounded-xl border border-zinc-800 bg-zinc-950 p-4 shadow-inner">

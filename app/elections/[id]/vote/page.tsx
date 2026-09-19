@@ -111,7 +111,7 @@ export default function VotePage({ params }: { params: { id: string } }) {
         <div className="text-4xl">🛡️</div>
         <h2 className="text-xl font-bold">One Student, One Vote!</h2>
         <p className="text-sm text-zinc-400">
-          Your ballot for <span className="font-semibold text-white">{election.title}</span> has already been securely cast and permanently sealed in the database.
+          You have already cast your vote in <span className="font-semibold text-white">{election.title}</span>. It has been securely sealed in the database.
         </p>
         <div className="pt-4">
           <Link href="/elections" className="inline-block rounded-lg bg-zinc-800 hover:bg-zinc-700 px-5 py-2.5 text-xs font-bold uppercase tracking-widest text-white transition-all">← Back to Elections</Link>

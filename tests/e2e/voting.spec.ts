@@ -58,8 +58,12 @@ test.describe('Voting booth', () => {
       path.join(process.cwd(), 'app', 'elections', '[id]', 'vote', 'page.tsx'),
       'utf8',
     );
+    const celebration = fs.readFileSync(
+      path.join(process.cwd(), 'components', 'voter', 'VoteCelebration.tsx'),
+      'utf8',
+    );
     expect(src).toMatch(/already cast your vote/i);
-    expect(src).toMatch(/Vote cast successfully/i);
+    expect(celebration).toMatch(/Vote cast successfully/i);
   });
 
   test('manifesto decision text is present in ballot markup (regression: line-clamp)', async () => {

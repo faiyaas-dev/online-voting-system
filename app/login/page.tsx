@@ -387,7 +387,7 @@ function LoginContent() {
           >
             {resending ? 'Resending…' : cooldown > 0 ? `Resend code in ${cooldown}s` : 'Resend code'}
           </button>
-          <button type="button" onClick={() => { setSent(false); setError(''); setInfo('') }} className="min-h-[44px] text-xs text-gray-500 uppercase tracking-widest hover:text-white transition-colors mt-2 text-center w-full">
+          <button type="button" onClick={() => { setSent(false); setError(''); setInfo(''); try { sessionStorage.removeItem(PENDING_KEY) } catch { /* ignore */ } }} className="min-h-[44px] text-xs text-gray-500 uppercase tracking-widest hover:text-white transition-colors mt-2 text-center w-full">
             ← Change email
           </button>
         </form>
