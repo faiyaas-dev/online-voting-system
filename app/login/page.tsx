@@ -12,6 +12,18 @@ function friendlyAuthError(message: string): string {
   if (m.includes('expired') || m.includes('invalid') || m.includes('otp_expired')) {
     return 'That code is expired or already used (email links are single-use). Tap “Resend code” for a fresh one — only the newest code works.'
   }
+  if (m.includes('rate limit') || m.includes('too many requests')) {
+    return 'Too many codes were requested. Wait a minute, then try again.'
+  }
+  if (m.includes('sending') || m.includes('smtp') || m.includes('email provider')) {
+    return 'Supabase could not send the email. In Supabase, configure Authentication → SMTP Settings and verify the sender, then try again.'
+  }
+  if (m.includes('redirect url') || m.includes('redirect_to')) {
+    return 'The app URL is not allowed by Supabase Auth. Add this site URL under Authentication → URL Configuration, then try again.'
+  }
+  if (m.includes('invalid api key') || m.includes('apikey')) {
+    return 'Supabase is not configured correctly for this site. Set the public Supabase key and restart the app.'
+  }
   return message
 }
 
@@ -153,7 +165,7 @@ function LoginContent() {
       ? `/login?institution=${institutionId.trim()}`
       : '/login'
     const { error } = await supabase.auth.signInWithOtp({
-      email,
+      email: email.trim().toLowerCase(),
       options: {
         shouldCreateUser: true,
         emailRedirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(next)}`,
@@ -161,7 +173,7 @@ function LoginContent() {
     })
     setLoading(false)
     if (error) { setError(friendlyAuthError(error.message)); return }
-    try { sessionStorage.setItem(PENDING_KEY, JSON.stringify({ email, institutionId, sent: true })) } catch { /* ignore */ }
+    try { sessionStorage.setItem(PENDING_KEY, JSON.stringify({ email: email.trim().toLowerCase(), institutionId, sent: true })) } catch { /* ignore */ }
     setSent(true)
     setCooldown(60)
     setInfo('Code sent! Enter the 6-digit code below. Only the newest code works.')
@@ -176,7 +188,7 @@ function LoginContent() {
       ? `/login?institution=${institutionId.trim()}`
       : '/login'
     const { error } = await supabase.auth.signInWithOtp({
-      email,
+      email: email.trim().toLowerCase(),
       options: {
         shouldCreateUser: true,
         emailRedirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(next)}`,

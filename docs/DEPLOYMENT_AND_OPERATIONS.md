@@ -29,7 +29,8 @@ Create a `.env.local` file for local development. In production, configure these
 ```env
 # Public Supabase Connection
 NEXT_PUBLIC_SUPABASE_URL=https://your-project-ref.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-public-key
+NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=sb_publishable_your-public-key
+# Older projects may use NEXT_PUBLIC_SUPABASE_ANON_KEY instead.
 
 # Netlify / Production Site URL
 NEXT_PUBLIC_SITE_URL=https://your-domain.com

@@ -19,6 +19,7 @@ The system guarantees election integrity by enforcing tenant boundaries, voter e
 - [Tech Stack](#tech-stack)
 - [Prerequisites & System Requirements](#prerequisites--system-requirements)
 - [Environment Setup](#environment-setup)
+- [Supabase OTP Setup](#supabase-otp-setup)
 - [Running Locally](#running-locally)
 - [Running Tests & Quality Gates](#running-tests--quality-gates)
 - [Database Schema & Security Principles](#database-schema--security-principles)
@@ -181,13 +182,20 @@ Ensure you have the following installed on your host machine:
    Populate your `.env.local` with your Supabase credentials:
    ```env
    NEXT_PUBLIC_SUPABASE_URL=https://your-project-ref.supabase.co
-   NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key-here
+   NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=sb_publishable_your-public-key
+   # For older Supabase projects, NEXT_PUBLIC_SUPABASE_ANON_KEY also works.
    ```
 
    > [!CAUTION]
    > **CRITICAL SECURITY RULE**: Never put the `SUPABASE_SERVICE_ROLE_KEY` in `.env.local` or any client-reachable file. The service role key bypasses all Row Level Security policies and must only exist in protected CI/CD environments or Supabase Edge Function secrets.
 
 ---
+
+## Supabase OTP Setup
+
+The complete SMTP, redirect URL, email-template, and troubleshooting
+procedure is documented in [docs/OTP_SETUP.md](./docs/OTP_SETUP.md). Complete
+that checklist before testing `/login` or `/signup` in production.
 
 ## Running Locally
 

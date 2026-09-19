@@ -11,6 +11,15 @@ function friendlyAuthError(message: string): string {
   if (m.includes('expired') || m.includes('invalid') || m.includes('otp_expired')) {
     return 'That code is expired or already used (email links are single-use and Gmail sometimes pre-opens them). Tap “Resend code” below for a fresh one.'
   }
+  if (m.includes('rate limit') || m.includes('too many requests')) {
+    return 'Too many codes were requested. Wait a minute, then try again.'
+  }
+  if (m.includes('sending') || m.includes('smtp') || m.includes('email provider')) {
+    return 'Supabase could not send the email. Check Authentication → SMTP Settings in your Supabase project, then try again.'
+  }
+  if (m.includes('invalid api key') || m.includes('apikey')) {
+    return 'Supabase is not configured correctly for this site. Set the public Supabase key and restart the app.'
+  }
   return message
 }
 
@@ -150,7 +159,7 @@ function SignupContent() {
     if (slugTaken) { setError('This slug is already taken. Please choose another.'); return }
     setLoading(true)
     const { error } = await supabase.auth.signInWithOtp({
-      email: adminEmail,
+      email: adminEmail.trim().toLowerCase(),
       options: {
         shouldCreateUser: true,
         // next=/signup brings the magic-link click BACK to this form instead
@@ -172,7 +181,7 @@ function SignupContent() {
     setInfo('')
     setResending(true)
     const { error } = await supabase.auth.signInWithOtp({
-      email: adminEmail,
+      email: adminEmail.trim().toLowerCase(),
       options: {
         shouldCreateUser: true,
         emailRedirectTo: `${window.location.origin}/auth/callback?next=/signup`,

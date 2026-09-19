@@ -69,7 +69,8 @@ supabase link --project-ref <your-dev-project-ref>
 Copy `.env.local.example` to `.env.local` and fill in:
 ```env
 NEXT_PUBLIC_SUPABASE_URL=https://your-project-ref.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key-here
+NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=sb_publishable_your-public-key
+# Older Supabase projects may use NEXT_PUBLIC_SUPABASE_ANON_KEY instead.
 ```
 
 > [!CAUTION]
