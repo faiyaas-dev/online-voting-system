@@ -19,7 +19,7 @@ jobs:
         with:
           bun-version: latest
       - run: bun install
-      - run: bunx playwright install --with-deps chromium
+      - run: bunx playwright install --with-deps chromium webkit
       - name: Validate E2E Supabase configuration
         run: |
           test -n "$NEXT_PUBLIC_SUPABASE_URL"

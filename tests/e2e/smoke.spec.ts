@@ -10,8 +10,8 @@ test.describe('Smoke — landing and auth gates', () => {
     page,
   }) => {
     await page.goto('/');
-    await expect(page.getByRole('link', { name: 'Sign In' })).toBeVisible();
-    await expect(page.getByRole('link', { name: 'Register Institution' })).toBeVisible();
+    await expect(page.getByRole('link', { name: 'Sign In' }).first()).toBeVisible();
+    await expect(page.getByRole('link', { name: 'Register Institution' }).first()).toBeVisible();
   });
 
   test('signup renders institution-first flow with slug auto-shape', async ({ page }) => {
