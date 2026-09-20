@@ -27,6 +27,7 @@ The system guarantees election integrity by enforcing tenant boundaries, voter e
   - [Deployment Architecture](#deployment-architecture)
   - [Configuring CI/CD Secrets](#configuring-cicd-secrets)
   - [Netlify Deployment & Secrets](#netlify-deployment--secrets)
+  - [Netlify Account Transition & Manual Test Gate](#netlify-account-transition--manual-test-gate)
   - [Safe Migration Rollback Procedures](#safe-migration-rollback-procedures)
   - [Auditing Live Election Statuses (SQL)](#auditing-live-election-statuses-sql)
   - [Troubleshooting Missing or Rejected Votes](#troubleshooting-missing-or-rejected-votes)
@@ -240,8 +241,14 @@ A build or PR is **not ready to ship** unless all database integrity, RLS bounda
 # Unit & database integrity tests
 npm.cmd run test
 
+# White-box branch/path coverage report
+npm.cmd run test:coverage
+
+# Fast black-box smoke gate
+npm.cmd run test:smoke
+
 # End-to-end browser tests
-npx playwright test
+npm.cmd run test:e2e
 
 # Production build validation
 npm.cmd run build
@@ -303,16 +310,22 @@ For the complete investigation history, evidence, failure interpretation, and re
 
 ### Netlify Deployment & Secrets
 
-Add the following environment variables to your Netlify site (**Site Settings > Environment Variables**) or via the Netlify CLI:
+Add only public runtime variables to your Netlify site (**Project configuration > Environment variables**) or via the Netlify CLI:
 
 ```bash
 netlify link # Link local repository to Netlify site
 
 netlify env:set NEXT_PUBLIC_SUPABASE_URL "https://your-project-ref.supabase.co"
 netlify env:set NEXT_PUBLIC_SUPABASE_ANON_KEY "your-anon-key"
-netlify env:set SUPABASE_SERVICE_ROLE_KEY "your-service-role-key"
-netlify env:set WEBHOOK_SECRET "your-generated-webhook-secret"
 ```
+
+Never put `SUPABASE_SERVICE_ROLE_KEY`, database passwords, or other privileged secrets in Netlify environment variables or client-reachable code. Keep them only in protected GitHub Actions/Supabase Edge Function environments.
+
+### Netlify Account Transition & Manual Test Gate
+
+Use the end-to-end transition algorithm in [docs/NETLIFY_ACCOUNT_MIGRATION_AND_TEST_PLAN.md](./docs/NETLIFY_ACCOUNT_MIGRATION_AND_TEST_PLAN.md). The short rule is: **prove the replacement site first, switch DNS/traffic second, and delete the old site last**. Prefer Netlify's site-transfer flow when the site must retain its identity; delete-and-recreate is a fallback that requires reconfiguring the repository, environment variables, domains, deploy contexts, and access controls.
+
+The runbook is intentionally credit-conscious: it runs local Jest and Playwright checks before any Netlify build, uses one production build for the candidate site, disables unnecessary branch/Deploy Preview builds during the transition, and records a rollback URL before deleting anything.
 
 ### Safe Migration Rollback Procedures
 
