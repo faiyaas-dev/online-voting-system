@@ -67,8 +67,6 @@ function LoginContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const rawUrlInstId = searchParams.get('institution') || searchParams.get('institutionId') || ''
-  // Only honour well-formed IDs from the link — anything else is treated as absent
-  // so we never render a raw-UUID textbox (P0-1).
   const urlInstId = UUID_RE.test(rawUrlInstId.trim()) ? rawUrlInstId.trim() : ''
 
   const [email, setEmail] = useState('')
@@ -84,22 +82,79 @@ function LoginContent() {
   const [loading, setLoading] = useState(false)
   const [resending, setResending] = useState(false)
   const [cooldown, setCooldown] = useState(0)
+  const [autoCompleting, setAutoCompleting] = useState(false)
   const cooldownRef = useRef<NodeJS.Timeout | null>(null)
 
-  // Restore pending login after magic-link round-trip, and resume an
-  // already-established session (link click) instead of a dead form.
-  // A failed exchange (expired / prefetched / reused link) returns here with
-  // ?error=auth_callback_failed — surface it instead of a silent blank form.
+  function persistPending(willSend: boolean) {
+    try {
+      sessionStorage.setItem(PENDING_KEY, JSON.stringify({ email, institutionId, sent: willSend }))
+    } catch { /* ignore */ }
+  }
+
+  async function handleSessionPostLogin(currentInstId: string) {
+    setAutoCompleting(true)
+    setInfo('Signing you in…')
+    try {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) { setAutoCompleting(false); return }
+
+      const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single()
+
+      if (profile) {
+        try { sessionStorage.removeItem(PENDING_KEY) } catch { /* ignore */ }
+        if (profile.role === 'platform_admin') router.push('/platform-admin')
+        else if (profile.role === 'institution_admin') router.push('/institution-admin')
+        else if (profile.role === 'department_admin') router.push('/department-admin')
+        else router.push('/elections')
+        return
+      }
+
+      if (!currentInstId.trim()) {
+        setError('No profile found. Pick your college above, or open the voting link from your college email.')
+        setInfo('')
+        setAutoCompleting(false)
+        return
+      }
+      if (!UUID_RE.test(currentInstId.trim())) {
+        setError('That college reference looks incomplete. Re-open the voting link from your college email, or pick your college from the list.')
+        setInfo('')
+        setAutoCompleting(false)
+        return
+      }
+
+      const { error: claimError } = await supabase.rpc('claim_voter_profile', {
+        p_institution_id: currentInstId.trim(),
+      })
+      if (claimError) {
+        setError(claimError.message)
+        setInfo('')
+        setAutoCompleting(false)
+        return
+      }
+      try { sessionStorage.removeItem(PENDING_KEY) } catch { /* ignore */ }
+      router.push('/elections')
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Sign-in failed')
+      setInfo('')
+      setAutoCompleting(false)
+    }
+  }
+
   useEffect(() => {
     if (searchParams.get('error') === 'auth_callback_failed') {
       setError('That email link expired or was already used — links work once and inbox scanners sometimes open them first. Enter your email and tap Send OTP for a fresh code.')
     }
+    let cancelled = false
+    let pendingInstId = ''
     try {
       const raw = sessionStorage.getItem(PENDING_KEY)
       if (raw) {
         const p = JSON.parse(raw) as { email?: string; institutionId?: string; sent?: boolean }
         if (p.email) setEmail(p.email)
-        if (p.institutionId && UUID_RE.test(p.institutionId)) setInstitutionId(p.institutionId)
+        if (p.institutionId && UUID_RE.test(p.institutionId)) {
+          setInstitutionId(p.institutionId)
+          pendingInstId = p.institutionId
+        }
         if (p.sent) {
           setSent(true)
           setInfo('Email confirmed — enter the 6-digit code, or Resend for a fresh one, then Verify & Sign in.')
@@ -107,12 +162,21 @@ function LoginContent() {
       }
     } catch { /* ignore */ }
     supabase.auth.getUser().then(({ data }) => {
+      if (cancelled) return
       if (!data.user) return
+      let hasPending = false
       try {
         const raw = sessionStorage.getItem(PENDING_KEY)
-        if (raw && JSON.parse(raw).sent) setSent(true)
+        if (raw) hasPending = JSON.parse(raw).sent === true
       } catch { /* ignore */ }
+      if (hasPending) {
+        setSent(true)
+        const effectiveInstId = pendingInstId || institutionId || urlInstId
+        void handleSessionPostLogin(effectiveInstId)
+      }
     })
+    return () => { cancelled = true }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [supabase, searchParams])
 
   useEffect(() => {
@@ -120,10 +184,7 @@ function LoginContent() {
     cooldownRef.current = setTimeout(() => setCooldown(c => c - 1), 1000)
     return () => { if (cooldownRef.current) clearTimeout(cooldownRef.current) }
   }, [cooldown])
-  // College directory for the searchable dropdown, served by the public
-  // get_public_institutions() RPC (id, name, slug only — no roster, email,
-  // or voter PII). Works signed-out; the voting-link paste path below
-  // always works as a fallback.
+
   useEffect(() => {
     let cancelled = false
     supabase.rpc('get_public_institutions')
@@ -131,8 +192,6 @@ function LoginContent() {
     return () => { cancelled = true }
   }, [supabase])
 
-  // Official institution NAME for the banner above the OTP step, resolved
-  // from the directory (never a raw UUID on screen). Fails closed — never blocks.
   useEffect(() => {
     if (!UUID_RE.test(institutionId)) { setInstitutionName(''); return }
     const match = directory.find(o => o.id === institutionId)
@@ -160,20 +219,16 @@ function LoginContent() {
     setError('')
     setInfo('')
     setLoading(true)
-    // Preserve college context through the magic-link round-trip.
-    const next = institutionId.trim() && UUID_RE.test(institutionId.trim())
-      ? `/login?institution=${institutionId.trim()}`
-      : '/login'
     const { error } = await supabase.auth.signInWithOtp({
       email: email.trim().toLowerCase(),
       options: {
         shouldCreateUser: true,
-        emailRedirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(next)}`,
+        emailRedirectTo: `${window.location.origin}/auth/callback`,
       },
     })
     setLoading(false)
     if (error) { setError(friendlyAuthError(error.message)); return }
-    try { sessionStorage.setItem(PENDING_KEY, JSON.stringify({ email: email.trim().toLowerCase(), institutionId, sent: true })) } catch { /* ignore */ }
+    persistPending(true)
     setSent(true)
     setCooldown(60)
     setInfo('Code sent! Enter the 6-digit code below. Only the newest code works.')
@@ -184,14 +239,11 @@ function LoginContent() {
     setError('')
     setInfo('')
     setResending(true)
-    const next = institutionId.trim() && UUID_RE.test(institutionId.trim())
-      ? `/login?institution=${institutionId.trim()}`
-      : '/login'
     const { error } = await supabase.auth.signInWithOtp({
       email: email.trim().toLowerCase(),
       options: {
         shouldCreateUser: true,
-        emailRedirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(next)}`,
+        emailRedirectTo: `${window.location.origin}/auth/callback`,
       },
     })
     setResending(false)
@@ -207,53 +259,25 @@ function LoginContent() {
     setLoading(true)
     const { error: otpError } = await supabase.auth.verifyOtp({ email, token: otp.trim(), type: 'email' })
     if (otpError) { setError(friendlyAuthError(otpError.message)); setLoading(false); return }
-
-    // Try to load existing profile
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) { setError('Auth failed'); setLoading(false); return }
-
-    const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single()
-
-    if (profile) {
-      // Already has a profile — redirect by role
-      try { sessionStorage.removeItem(PENDING_KEY) } catch { /* ignore */ }
-      if (profile.role === 'platform_admin') router.push('/platform-admin')
-      else if (profile.role === 'institution_admin') router.push('/institution-admin')
-      else if (profile.role === 'department_admin') router.push('/department-admin')
-      else router.push('/elections')
-      return
-    }
-
-    // No profile yet — voter first login: need institution_id to claim.
-    // claim_voter_profile matches the exact (institution_id, email) roster row;
-    // the ID is resolved from the college voting link or the college picker
-    // above — the student never types or sees a raw UUID (P0-1).
-    if (!institutionId.trim()) {
-      setError('No profile found. Pick your college above, or open the voting link from your college email.')
-      setLoading(false)
-      return
-    }
-    if (!UUID_RE.test(institutionId.trim())) {
-      setError('That college reference looks incomplete. Re-open the voting link from your college email, or pick your college from the list.')
-      setLoading(false)
-      return
-    }
-
-    const { error: claimError } = await supabase.rpc('claim_voter_profile', {
-      p_institution_id: institutionId.trim(),
-    })
     setLoading(false)
-    if (claimError) { setError(claimError.message); return }
-    try { sessionStorage.removeItem(PENDING_KEY) } catch { /* ignore */ }
-    router.push('/elections')
+    void handleSessionPostLogin(institutionId || urlInstId)
   }
 
   return (
     <div className="w-full max-w-md p-8 bg-black border border-gray-800 space-y-6">
       <h1 className="text-3xl font-extrabold uppercase tracking-widest text-center">Sign in</h1>
-      <Steps step={sent ? 3 : 1} />
+      <Steps step={sent || autoCompleting ? 3 : 1} />
 
-      {!sent ? (
+      {autoCompleting ? (
+        <div className="flex flex-col gap-6 mt-4 items-center">
+          <div className="border border-gray-800 bg-transparent px-4 py-8 w-full text-center">
+            <p className="text-sm text-gray-400">Signing you in…</p>
+            <p className="mt-2 text-xs text-gray-500">Do not close this window.</p>
+          </div>
+          {info && <p className="text-green-400 text-sm">{info}</p>}
+          {error && <p className="text-red-500 text-sm">{error}</p>}
+        </div>
+      ) : !sent ? (
         <form onSubmit={sendOtp} className="flex flex-col gap-6 mt-4">
           <div className="flex flex-col gap-2">
             <label htmlFor="email" className="text-xs font-bold uppercase tracking-widest text-gray-400">Email address</label>

@@ -52,9 +52,6 @@ function Steps({ step }: { step: 1 | 2 | 3 }) {
   )
 }
 
-// Institution self-serve signup:
-// 1. Enter institution name + admin email → send OTP
-// 2. Verify OTP → create institution row + institution_admin profile
 function SignupContent() {
   const [supabase] = useState(() => createClient())
   const router = useRouter()
@@ -72,6 +69,7 @@ function SignupContent() {
   const [cooldown, setCooldown] = useState(0)
   const [slugTaken, setSlugTaken] = useState(false)
   const [slugAvailability, setSlugAvailability] = useState<'available' | 'taken' | null>(null)
+  const [autoCompleting, setAutoCompleting] = useState(false)
   const slugTimeoutRef = useRef<NodeJS.Timeout | null>(null)
   const cooldownRef = useRef<NodeJS.Timeout | null>(null)
 
@@ -79,14 +77,44 @@ function SignupContent() {
     return val.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
   }
 
-  // Restore pending signup after magic-link round-trip (page state is lost
-  // on the email-link redirect, so persist to sessionStorage before send).
-  // A failed exchange returns here with ?error=auth_callback_failed —
-  // surface it instead of a silent blank form.
+  function persistPending(willSend: boolean) {
+    try {
+      sessionStorage.setItem(PENDING_KEY, JSON.stringify({ institutionName, slug, adminEmail, sent: willSend }))
+    } catch { /* private mode — non-blocking */ }
+  }
+
+  async function createInstitutionAndRedirect() {
+    setAutoCompleting(true)
+    setError('')
+    setInfo('Completing setup — please wait…')
+    try {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) { setAutoCompleting(false); return }
+
+      const { error: rpcError } = await supabase.rpc('create_institution_and_admin', {
+        p_name: institutionName.trim(),
+        p_slug: slug.trim(),
+      })
+      if (rpcError) {
+        setError(rpcError.message)
+        setInfo('')
+        setAutoCompleting(false)
+        return
+      }
+      try { sessionStorage.removeItem(PENDING_KEY) } catch { /* ignore */ }
+      router.push('/institution-admin')
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Setup failed')
+      setInfo('')
+      setAutoCompleting(false)
+    }
+  }
+
   useEffect(() => {
     if (searchParams.get('error') === 'auth_callback_failed') {
       setError('That email link expired or was already used — links work once and inbox scanners sometimes open them first. Re-enter your details and tap Send OTP for a fresh code.')
     }
+    let cancelled = false
     try {
       const raw = sessionStorage.getItem(PENDING_KEY)
       if (!raw) return
@@ -99,19 +127,22 @@ function SignupContent() {
         setInfo('Email confirmed — enter the 6-digit code from your email, or tap Resend code for a fresh one, then Verify & Create.')
       }
     } catch { /* corrupted storage — start fresh */ }
-    // If the magic link already established a session, surface it instead of
-    // leaving the user on a dead form.
     supabase.auth.getUser().then(({ data }) => {
+      if (cancelled) return
       if (data.user) {
-        setSent(s => {
-          try {
-            const raw = sessionStorage.getItem(PENDING_KEY)
-            if (raw && JSON.parse(raw).sent) return true
-          } catch { /* ignore */ }
-          return s
-        })
+        let hasPending = false
+        try {
+          const raw = sessionStorage.getItem(PENDING_KEY)
+          if (raw) hasPending = JSON.parse(raw).sent === true
+        } catch { /* ignore */ }
+        if (hasPending) {
+          setSent(true)
+          createInstitutionAndRedirect()
+        }
       }
     })
+    return () => { cancelled = true }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [supabase, searchParams])
 
   useEffect(() => {
@@ -120,10 +151,6 @@ function SignupContent() {
     return () => { if (cooldownRef.current) clearTimeout(cooldownRef.current) }
   }, [cooldown])
 
-  // Debounced slug availability check — does NOT cost an OTP round-trip.
-  // get_public_institutions() takes no arguments (see migration
-  // 20260918000001): fetch the public directory once and match the slug
-  // client-side instead of passing a server-side filter that does not exist.
   const checkSlugAvailability = useCallback(async (value: string) => {
     const trimmed = value.trim().toLowerCase()
     if (!trimmed) { setSlugAvailability(null); setSlugTaken(false); return }
@@ -145,12 +172,6 @@ function SignupContent() {
     return () => { if (slugTimeoutRef.current) clearTimeout(slugTimeoutRef.current) }
   }, [slug, checkSlugAvailability])
 
-  function persistPending(willSend: boolean) {
-    try {
-      sessionStorage.setItem(PENDING_KEY, JSON.stringify({ institutionName, slug, adminEmail, sent: willSend }))
-    } catch { /* private mode — non-blocking */ }
-  }
-
   async function sendOtp(e: React.FormEvent) {
     e.preventDefault()
     setError('')
@@ -162,9 +183,7 @@ function SignupContent() {
       email: adminEmail.trim().toLowerCase(),
       options: {
         shouldCreateUser: true,
-        // next=/signup brings the magic-link click BACK to this form instead
-        // of dumping the user on the homepage with their typing lost.
-        emailRedirectTo: `${window.location.origin}/auth/callback?next=/signup`,
+        emailRedirectTo: `${window.location.origin}/auth/callback`,
       },
     })
     setLoading(false)
@@ -184,7 +203,7 @@ function SignupContent() {
       email: adminEmail.trim().toLowerCase(),
       options: {
         shouldCreateUser: true,
-        emailRedirectTo: `${window.location.origin}/auth/callback?next=/signup`,
+        emailRedirectTo: `${window.location.origin}/auth/callback`,
       },
     })
     setResending(false)
@@ -206,7 +225,6 @@ function SignupContent() {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) { setError('Auth failed'); setLoading(false); return }
 
-    // F-01/F-10 fix: Use SECURITY DEFINER RPC — role is hardcoded server-side
     const { error: rpcError } = await supabase.rpc('create_institution_and_admin', {
       p_name: institutionName.trim(),
       p_slug: slug.trim(),
@@ -222,8 +240,17 @@ function SignupContent() {
     <main className="flex items-center justify-center min-h-screen bg-black text-white p-6">
       <div className="w-full max-w-md p-8 bg-black border border-gray-800 space-y-6">
         <h1 className="text-3xl font-extrabold uppercase tracking-widest text-center">Register</h1>
-        <Steps step={sent ? 3 : 1} />
-        {!sent ? (
+        <Steps step={sent || autoCompleting ? 3 : 1} />
+        {autoCompleting ? (
+          <div className="flex flex-col gap-6 mt-4 items-center">
+            <div className="border border-gray-800 bg-transparent px-4 py-8 w-full text-center">
+              <p className="text-sm text-gray-400">Setting up <strong className="text-white">{institutionName || 'your institution'}</strong>…</p>
+              <p className="mt-2 text-xs text-gray-500">This takes a few seconds. Do not close this window.</p>
+            </div>
+            {info && <p className="text-green-400 text-sm">{info}</p>}
+            {error && <p className="text-red-500 text-sm">{error}</p>}
+          </div>
+        ) : !sent ? (
           <form onSubmit={sendOtp} className="flex flex-col gap-6 mt-4">
             <div className="flex flex-col gap-2">
               <label htmlFor="institutionName" className="text-xs font-bold uppercase tracking-widest text-gray-400">Institution Name</label>

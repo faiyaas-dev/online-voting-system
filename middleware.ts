@@ -31,8 +31,15 @@ export async function middleware(request: NextRequest) {
 
   const { pathname } = request.nextUrl
 
-  // Protected routes
-  const protectedPaths = ['/dashboard', '/elections', '/vote', '/results', '/nominate']
+  // Protected routes — prefix-matched (startsWith). /elections covers
+  // /elections/[id]/{vote,nominate,results,candidates} too.
+  const protectedPaths = [
+    '/elections',
+    '/institution-admin',
+    '/department-admin',
+    '/platform-admin',
+    '/e2e-governance',
+  ]
   const isProtected = protectedPaths.some(p => pathname.startsWith(p))
 
   if (!user && isProtected) {
