@@ -184,6 +184,7 @@ function SignupContent() {
       options: {
         shouldCreateUser: true,
         emailRedirectTo: `${window.location.origin}/auth/callback`,
+        data: { institution_name: institutionName },
       },
     })
     setLoading(false)
@@ -204,6 +205,7 @@ function SignupContent() {
       options: {
         shouldCreateUser: true,
         emailRedirectTo: `${window.location.origin}/auth/callback`,
+        data: { institution_name: institutionName },
       },
     })
     setResending(false)

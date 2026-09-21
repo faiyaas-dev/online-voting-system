@@ -50,13 +50,30 @@ whether a test message was accepted or rejected.
 
 In **Authentication → Email Templates → Magic Link**:
 
-- For a six-digit code, include `{{ .Token }}` in the message. Example:
+- For a six-digit code, include `{{ .Token }}` in the message. The
+  `signInWithOtp` call on the login and signup pages passes
+  `options.data.institution_name`, which is accessible in the template as
+  `{{ .Data.institution_name }}`. Use **Go `text/template` syntax** — `or` is
+  a **prefix function**, not an infix operator, and string literals must use
+  **double quotes**. Paste this exact corrected body:
 
   ```html
-  <h2>Sign in to College Election System</h2>
-  <p>Enter this one-time code: <strong>{{ .Token }}</strong></p>
-  <p>This code expires according to the Email OTP expiration setting.</p>
+  <h2>College Election System — One-Time Code</h2>
+  <p>Enter this 6-digit code on the sign-in screen:</p>
+  <p style="font-size: 28px; font-weight: bold; letter-spacing: 8px; font-family: monospace;">
+    {{ .Token }}
+  </p>
+  <p>This code expires in 1 hour. Only the newest code works.</p>
+  <p style="color: #888; font-size: 12px;">
+    Sent to {{ .Email }} for {{ or .Data.institution_name "your sign-in request" }}
+  </p>
   ```
+
+  Go template bugs that break rendering (do **not** do this):
+  - `{{ .Data.institution_name or 'fallback' }}` — `or` is used as infix
+    (wrong) and strings use single quotes (wrong); rendered literally.
+  - `{{ .Data.institution_name or "fallback" }}` — still wrong because `or`
+    is infix; correct order is `{{ or VALUE FALLBACK }}`.
 
 - For a clickable link using the recommended PKCE server flow, use:
 

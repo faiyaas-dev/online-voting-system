@@ -224,6 +224,7 @@ function LoginContent() {
       options: {
         shouldCreateUser: true,
         emailRedirectTo: `${window.location.origin}/auth/callback`,
+        data: institutionName ? { institution_name: institutionName } : undefined,
       },
     })
     setLoading(false)
@@ -244,6 +245,7 @@ function LoginContent() {
       options: {
         shouldCreateUser: true,
         emailRedirectTo: `${window.location.origin}/auth/callback`,
+        data: institutionName ? { institution_name: institutionName } : undefined,
       },
     })
     setResending(false)
