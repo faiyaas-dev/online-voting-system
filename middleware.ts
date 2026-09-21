@@ -38,7 +38,6 @@ export async function middleware(request: NextRequest) {
     '/institution-admin',
     '/department-admin',
     '/platform-admin',
-    '/e2e-governance',
   ]
   const isProtected = protectedPaths.some(p => pathname.startsWith(p))
 
