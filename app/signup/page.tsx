@@ -6,27 +6,13 @@ import { useRouter, useSearchParams } from 'next/navigation'
 
 const PENDING_KEY = 'ovs_signup_pending'
 
-function friendlyAuthError(message: string): string {
-  const m = message.toLowerCase()
-  if (m.includes('expired') || m.includes('invalid') || m.includes('otp_expired')) {
-    return 'That code is expired or already used (email links are single-use and Gmail sometimes pre-opens them). Tap “Resend code” below for a fresh one.'
-  }
-  if (m.includes('rate limit') || m.includes('too many requests')) {
-    return 'Too many codes were requested. Wait a minute, then try again.'
-  }
-  if (m.includes('sending') || m.includes('smtp') || m.includes('email provider')) {
-    return 'Supabase could not send the email. Check Authentication → SMTP Settings in your Supabase project, then try again.'
-  }
-  if (m.includes('invalid api key') || m.includes('apikey')) {
-    return 'Supabase is not configured correctly for this site. Set the public Supabase key and restart the app.'
-  }
-  return message
-}
+// DEBUG MODE (until project finished): surface raw Supabase errors as-is.
+// No friendly mapping — see console.error for full error objects.
 
 function Steps({ step }: { step: 1 | 2 | 3 }) {
   const items = [
     { n: 1, title: 'Enter details', sub: 'College + admin email' },
-    { n: 2, title: 'Check email', sub: '6-digit code' },
+    { n: 2, title: 'Check email', sub: 'verification code' },
     { n: 3, title: 'Verify & create', sub: 'Finish setup' },
   ]
   return (
@@ -112,7 +98,9 @@ function SignupContent() {
 
   useEffect(() => {
     if (searchParams.get('error') === 'auth_callback_failed') {
-      setError('That email link expired or was already used — links work once and inbox scanners sometimes open them first. Re-enter your details and tap Send OTP for a fresh code.')
+      // Strict code-only: no links are sent, so this should never happen.
+      // Surface raw so the cause is visible during development.
+      setError('auth_callback_failed: raw callback error (no link flow in strict code-only mode).')
     }
     let cancelled = false
     try {
@@ -124,7 +112,7 @@ function SignupContent() {
       if (p.adminEmail) setAdminEmail(p.adminEmail)
       if (p.sent) {
         setSent(true)
-        setInfo('Email confirmed — enter the 6-digit code from your email, or tap Resend code for a fresh one, then Verify & Create.')
+          setInfo('Session restored — enter the verification code from your email, or tap Resend code for a fresh one, then Verify & Create.')
       }
     } catch { /* corrupted storage — start fresh */ }
     supabase.auth.getUser().then(({ data }) => {
@@ -174,6 +162,7 @@ function SignupContent() {
 
   async function sendOtp(e: React.FormEvent) {
     e.preventDefault()
+    if (loading) return
     setError('')
     setInfo('')
     if (!institutionName.trim() || !slug.trim()) { setError('Institution name and slug required'); return }
@@ -183,16 +172,16 @@ function SignupContent() {
       email: adminEmail.trim().toLowerCase(),
       options: {
         shouldCreateUser: true,
-        emailRedirectTo: `${window.location.origin}/auth/callback`,
+        // No emailRedirectTo: pure OTP mode - prevents Gmail pre-fetch from consuming token.
         data: { institution_name: institutionName },
       },
     })
     setLoading(false)
-    if (error) { setError(friendlyAuthError(error.message)); return }
+    if (error) { console.error('[signup sendOtp raw error]', error); setError(error.message); return }
     persistPending(true)
     setSent(true)
     setCooldown(60)
-    setInfo('Code sent! Check your inbox for the 6-digit code and enter it below. Can’t find a code? Click the email link instead — it brings you back here.')
+    setInfo('Code sent! Check your inbox for the verification code and enter it below.')
   }
 
   async function resendCode() {
@@ -204,25 +193,49 @@ function SignupContent() {
       email: adminEmail.trim().toLowerCase(),
       options: {
         shouldCreateUser: true,
-        emailRedirectTo: `${window.location.origin}/auth/callback`,
+        // Same as sendOtp: no emailRedirectTo to stay in pure OTP mode.
         data: { institution_name: institutionName },
       },
     })
     setResending(false)
-    if (error) { setError(friendlyAuthError(error.message)); return }
+    if (error) { console.error('[signup resend raw error]', error); setError(error.message); return }
     persistPending(true)
+    setOtp('')
     setCooldown(60)
     setInfo('Fresh code sent — only the newest code works, older ones stop working.')
   }
 
   async function verifyAndCreate(e: React.FormEvent) {
     e.preventDefault()
+    if (loading) return
     setError('')
     setInfo('')
     setLoading(true)
 
-    const { error: otpError } = await supabase.auth.verifyOtp({ email: adminEmail, token: otp.trim(), type: 'email' })
-    if (otpError) { setError(friendlyAuthError(otpError.message)); setLoading(false); return }
+    const cleanOtp = otp.trim().replace(/\D/g, '')
+    // Server OTP length is configurable (6-8 digits observed) — accept any
+    // code of length >= 6 instead of hard-coding 6.
+    if (cleanOtp.length < 6) {
+      setError('Enter the verification code from your email.')
+      setLoading(false)
+      return
+    }
+    // Code-only OTP: signInWithOtp issues a unified email-type OTP.
+    // 'signup'/'magiclink' types are deprecated — a single type:'email'
+    // call avoids burning rate-limited attempts with guaranteed failures.
+    const verifyEmail = adminEmail.trim().toLowerCase()
+    const { error: otpError } = await supabase.auth.verifyOtp({
+      email: verifyEmail,
+      token: cleanOtp,
+      type: 'email',
+    })
+
+    if (otpError) {
+      console.error('[signup verifyOtp raw error type=email]', otpError)
+      setError(`${otpError.message} Only the newest code works — tap Resend code if this one is old.`)
+      setLoading(false)
+      return
+    }
 
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) { setError('Auth failed'); setLoading(false); return }
@@ -308,12 +321,12 @@ function SignupContent() {
             >
               {loading ? 'Sending…' : 'Send OTP'}
             </button>
-            <p className="text-xs text-gray-500 text-center">Step 1 of 3 — we email you a 6-digit code. It expires in 1 hour; only the newest code works.</p>
+            <p className="text-xs text-gray-500 text-center">Step 1 of 3 — we email you a verification code. It expires in 1 hour; only the newest code works.</p>
           </form>
         ) : (
           <form onSubmit={verifyAndCreate} className="flex flex-col gap-6 mt-4">
             <p className="text-sm text-gray-400 text-center">OTP sent to <strong className="text-white">{adminEmail}</strong> for <strong className="text-white">{institutionName}</strong></p>
-            <p className="text-xs text-gray-500 text-center">Enter the 6-digit code below. Only clicked the email link? Good — you are back here, just enter the code or resend.</p>
+            <p className="text-xs text-gray-500 text-center">Enter the verification code from your email.</p>
             <div className="flex flex-col gap-2">
               <label htmlFor="otp" className="text-xs font-bold uppercase tracking-widest text-gray-400">OTP code</label>
               <input
@@ -323,8 +336,8 @@ function SignupContent() {
                 value={otp}
                 onChange={e => setOtp(e.target.value)}
                 className="bg-transparent border-b border-gray-700 focus:border-white px-0 py-3 text-2xl tracking-widest outline-none transition-colors text-center"
-                placeholder="------"
-                maxLength={6}
+                placeholder="--------"
+                maxLength={10}
                 inputMode="numeric"
                 autoComplete="one-time-code"
               />
