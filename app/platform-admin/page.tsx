@@ -2,6 +2,7 @@ import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 
 import type { Profile, PlatformMetric } from '@/lib/supabase/types'
+import { getRoleHome } from '@/lib/auth/getRoleHome'
 
 function toNum(v: number | string | null | undefined): number {
   return Number(v ?? 0)
@@ -12,7 +13,11 @@ function csvEscape(v: string | number | null | undefined): string {
   return /[",\r\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s
 }
 
-export default async function PlatformAdminPage() {
+export default async function PlatformAdminPage({
+  searchParams,
+}: {
+  searchParams?: { from?: string }
+}) {
   const supabase = createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
@@ -23,7 +28,8 @@ export default async function PlatformAdminPage() {
     .eq('id', user.id)
     .single<Pick<Profile, 'role'>>()
 
-  if (!profile || profile.role !== 'platform_admin') redirect('/')
+  if (!profile) redirect('/login')
+  if (profile.role !== 'platform_admin') redirect(`${getRoleHome(profile.role)}?from=platform-admin`)
 
   // Call get_platform_metrics RPC — aggregates only, no PII
   const { data: metrics, error } = await supabase.rpc('get_platform_metrics')

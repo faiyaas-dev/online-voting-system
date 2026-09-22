@@ -2,9 +2,14 @@ import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import type { Profile } from '@/lib/supabase/types'
+import { getRoleHome, formatRole } from '@/lib/auth/getRoleHome'
 
 // Root page: redirect based on role, or show landing with login/signup links
-export default async function HomePage() {
+export default async function HomePage({
+  searchParams,
+}: {
+  searchParams?: { from?: string; expected?: string }
+}) {
   const supabase = createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
@@ -17,11 +22,11 @@ export default async function HomePage() {
 
     if (!profile) redirect('/login')
 
-    if (profile.role === 'platform_admin') redirect('/platform-admin')
-    if (profile.role === 'institution_admin') redirect('/institution-admin')
-    if (profile.role === 'department_admin') redirect('/department-admin')
-    redirect('/elections')
+    redirect(getRoleHome(profile.role))
   }
+
+  const fromPage = searchParams?.from
+  const expectedRole = searchParams?.expected
 
   // Proof row: colleges count from the only public RPC (get_public_institutions).
   // Elections/votes have no anon count RPC — rendered without numbers per spec.
@@ -36,6 +41,15 @@ export default async function HomePage() {
 
   return (
     <main className="flex flex-col min-h-screen bg-black text-white">
+      {fromPage && (
+        <div className="border-b border-yellow-900 bg-yellow-950/30 px-6 py-3 text-center">
+          <p className="text-xs font-bold uppercase tracking-widest text-yellow-400">
+            {expectedRole
+              ? `That page (${fromPage}) needs ${formatRole(expectedRole)} access — you were sent home. Use Sign In below with the right tab.`
+              : `That page (${fromPage}) isn't for your role — you were sent home.`}
+          </p>
+        </div>
+      )}
       <div className="flex-1 flex flex-col items-center justify-center p-8 min-h-[80vh]">
         <div className="max-w-3xl text-center space-y-8">
           <h1 className="text-6xl md:text-8xl font-extrabold tracking-tighter uppercase">
@@ -49,10 +63,16 @@ export default async function HomePage() {
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-6 pt-4">
             <Link
-              href="/login"
+              href="/login?intent=voter"
               className="min-h-[44px] px-8 py-4 bg-white text-black font-bold uppercase tracking-widest hover:bg-gray-200 transition-colors flex items-center justify-center"
             >
-              Sign In
+              Sign In as Voter
+            </Link>
+            <Link
+              href="/login?intent=institution_admin"
+              className="min-h-[44px] px-8 py-4 border border-gray-700 text-white font-bold uppercase tracking-widest hover:border-white transition-colors flex items-center justify-center"
+            >
+              Admin Sign In
             </Link>
             <Link
               href="/signup"
@@ -61,28 +81,13 @@ export default async function HomePage() {
               Register Institution
             </Link>
           </div>
+          <p className="text-xs text-gray-500 tracking-wide">
+            Voters use college email + OTP. Institution Admins register the college first. Department Admins join via invite email.
+          </p>
         </div>
       </div>
 
-      {/* Sticky Sign In bar — Fogg:Prompt after hero fold, all viewports so
-          desktop scrollers keep a CTA too (was md:hidden mobile-only). */}
-      <div
-        className="sticky bottom-0 z-40 flex items-center gap-3 border-t border-gray-800 bg-black p-4"
-        aria-label="Quick sign in"
-      >
-        <Link
-          href="/login"
-          className="flex flex-1 min-h-[44px] items-center justify-center bg-white px-4 py-3 text-sm font-bold uppercase tracking-widest text-black hover:bg-gray-200 transition-colors"
-        >
-          Sign In
-        </Link>
-        <Link
-          href="/signup"
-          className="flex flex-1 min-h-[44px] items-center justify-center border border-white px-4 py-3 text-sm font-bold uppercase tracking-widest text-white hover:bg-white hover:text-black transition-colors"
-        >
-          Register Institution
-        </Link>
-      </div>
+
 
       {/* How voting works — 3 steps: college link → OTP → ballot in <2 min */}
       <section aria-label="How voting works" className="border-t border-gray-800 bg-black px-8 py-12 md:px-12 md:py-16">

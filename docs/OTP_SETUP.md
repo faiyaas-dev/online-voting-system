@@ -50,12 +50,15 @@ whether a test message was accepted or rejected.
 
 In **Authentication → Email Templates → Magic Link**:
 
-- For a six-digit code, include `{{ .Token }}` in the message. The
-  `signInWithOtp` call on the login and signup pages passes
-  `options.data.institution_name`, which is accessible in the template as
-  `{{ .Data.institution_name }}`. Use **Go `text/template` syntax** — `or` is
-  a **prefix function**, not an infix operator, and string literals must use
-  **double quotes**. Paste this exact corrected body:
+- **Subject**: `College Election System — One-Time Code`
+- **Body**: Copy the version-controlled source file
+  `supabase/auth-templates/magic-link.html` (open the file and paste its
+  contents into the Supabase Body field, `<body>` inner HTML only — Supabase
+  wraps the body).
+
+  The six-digit OTP template includes `{{ .Token }}`. The `signInWithOtp`
+  calls on the login and signup pages pass `options.data.institution_name`,
+  which the template renders with correct **Go `text/template` syntax**:
 
   ```html
   <h2>College Election System — One-Time Code</h2>
@@ -69,11 +72,14 @@ In **Authentication → Email Templates → Magic Link**:
   </p>
   ```
 
-  Go template bugs that break rendering (do **not** do this):
-  - `{{ .Data.institution_name or 'fallback' }}` — `or` is used as infix
-    (wrong) and strings use single quotes (wrong); rendered literally.
+  Go template bugs that break rendering (do **not** do this — the original
+  broken template suffered from both):
+  - `{{ .Data.institution_name or 'fallback' }}` — `or` used as **infix**
+    (wrong; it is a prefix function) and strings use **single quotes**
+    (wrong; Go `text/template` requires **double quotes**); the whole block
+    renders literally.
   - `{{ .Data.institution_name or "fallback" }}` — still wrong because `or`
-    is infix; correct order is `{{ or VALUE FALLBACK }}`.
+    is infix. Correct order is `{{ or VALUE FALLBACK }}`.
 
 - For a clickable link using the recommended PKCE server flow, use:
 

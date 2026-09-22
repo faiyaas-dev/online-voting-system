@@ -5,11 +5,16 @@ import CreateElectionForm from '@/components/admin/CreateElectionForm'
 import ElectionTable from '@/components/admin/ElectionTable'
 import CandidateApprovalTable from '@/components/admin/CandidateApprovalTable'
 import type { Profile, Election } from '@/lib/supabase/types'
+import { getRoleHome } from '@/lib/auth/getRoleHome'
 
-export default async function DeptAdminPage() {
+export default async function DeptAdminPage({
+  searchParams,
+}: {
+  searchParams?: { from?: string }
+}) {
   const supabase = createClient()
   const { data: { user } } = await supabase.auth.getUser()
-  if (!user) redirect('/login')
+  if (!user) redirect('/login?intent=department_admin')
 
   const { data: profile } = await supabase
     .from('profiles')
@@ -17,7 +22,8 @@ export default async function DeptAdminPage() {
     .eq('id', user.id)
     .single<Profile>()
 
-  if (!profile || profile.role !== 'department_admin') redirect('/')
+  if (!profile) redirect('/login?intent=department_admin')
+  if (profile.role !== 'department_admin') redirect(`${getRoleHome(profile.role)}?from=department-admin`)
   if (!profile.department) {
     return (
       <main className="min-h-screen bg-black text-white p-6 md:p-12">

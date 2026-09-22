@@ -254,7 +254,11 @@ function SignupContent() {
   return (
     <main className="flex items-center justify-center min-h-screen bg-black text-white p-6">
       <div className="w-full max-w-md p-8 bg-black border border-gray-800 space-y-6">
-        <h1 className="text-3xl font-extrabold uppercase tracking-widest text-center">Register</h1>
+        <h1 className="text-3xl font-extrabold uppercase tracking-widest text-center">Register Institution</h1>
+        <p className="text-xs text-gray-500 text-center tracking-wide">
+          You sign up as <strong className="text-white">Institution Admin</strong> — full control of one college.
+          Department Admins join later via invite. Students just sign in, they never register here.
+        </p>
         <Steps step={sent || autoCompleting ? 3 : 1} />
         {autoCompleting ? (
           <div className="flex flex-col gap-6 mt-4 items-center">

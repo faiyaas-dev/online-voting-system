@@ -39,8 +39,16 @@ serve(async (req) => {
     if (!email || !department || !institution_id) throw new Error('Missing email, department, or institution_id')
     if (institution_id !== callerProfile.institution_id) throw new Error('Cross-institution invite denied')
 
+    // Deep-link the invitee straight into the Department Admin sign-in tab,
+    // so they never face the voter college-picker. Falls back to /login when
+    // APP_ORIGIN is unset (local dev).
+    const appOrigin = (Deno.env.get('APP_ORIGIN') ?? '').replace(/\/$/, '')
+    const redirectTo = appOrigin
+      ? `${appOrigin}/auth/callback?next=${encodeURIComponent(`/login?intent=department_admin&institution=${institution_id}`)}`
+      : undefined
+
     // Invite user via Supabase Admin Auth
-    const { data: invited, error: inviteError } = await supabaseAdmin.auth.admin.inviteUserByEmail(email)
+    const { data: invited, error: inviteError } = await supabaseAdmin.auth.admin.inviteUserByEmail(email, redirectTo ? { redirectTo } : undefined)
     if (inviteError) throw new Error(inviteError.message)
 
     // Create or update their profile with dept admin role

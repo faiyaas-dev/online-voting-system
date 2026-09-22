@@ -71,7 +71,7 @@ export default function InviteDeptAdminForm({ institutionId }: { institutionId: 
     const json = await res.json()
     setLoading(false)
     if (!res.ok) { setError(json.error ?? 'Invite failed'); return }
-    setSuccess(`Invited ${email} as Department Admin for ${department}.`)
+    setSuccess(`Invited ${email} as Department Admin for ${department}. Ask them to open the invite email → Department Admin tab on Sign In.`)
     setEmail('')
     setDepartment('')
   }

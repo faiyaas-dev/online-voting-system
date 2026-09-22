@@ -14,10 +14,14 @@ function statusBadge(status: Election['status']) {
   return map[status] || 'border-gray-700 text-gray-500'
 }
 
-export default async function ElectionsPage() {
+export default async function ElectionsPage({
+  searchParams,
+}: {
+  searchParams?: { from?: string }
+}) {
   const supabase = createClient()
   const { data: { user } } = await supabase.auth.getUser()
-  if (!user) redirect('/login')
+  if (!user) redirect('/login?intent=voter')
 
   const { data: profile } = await supabase
     .from('profiles')
@@ -25,7 +29,7 @@ export default async function ElectionsPage() {
     .eq('id', user.id)
     .single<Profile>()
 
-  if (!profile) redirect('/login')
+  if (!profile) redirect('/login?intent=voter')
 
   // RLS already filters elections by eligibility
   const { data: elections } = await supabase
@@ -71,6 +75,13 @@ export default async function ElectionsPage() {
   return (
     <main className="min-h-screen bg-black text-white p-6 md:p-12">
       <div className="max-w-4xl mx-auto space-y-12">
+        {searchParams?.from && (
+          <div className="border border-yellow-900 bg-yellow-950/20 px-4 py-3">
+            <p className="text-xs font-bold uppercase tracking-widest text-yellow-400">
+              You were redirected from {searchParams.from} — your role lands here. Manage elections from your admin dashboard instead.
+            </p>
+          </div>
+        )}
         <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6 border-b border-gray-800 pb-6">
           <h1 className="text-4xl font-extrabold uppercase tracking-widest">Elections</h1>
         </header>

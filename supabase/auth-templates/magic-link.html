@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>College Election System — One-Time Code</title>
+    <style>
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+          Helvetica, Arial, sans-serif;
+        background: #ffffff;
+        color: #111111;
+        margin: 0;
+        padding: 32px 24px;
+        line-height: 1.5;
+      }
+      h2 {
+        margin: 0 0 16px;
+        font-size: 22px;
+        font-weight: 700;
+      }
+      .otp {
+        font-size: 28px;
+        font-weight: 700;
+        letter-spacing: 8px;
+        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+        margin: 8px 0 16px;
+        padding: 8px 0;
+      }
+      .muted {
+        color: #888888;
+        font-size: 12px;
+        margin: 0;
+      }
+      p { margin: 0 0 8px; }
+    </style>
+  </head>
+  <body>
+    <h2>College Election System — One-Time Code</h2>
+    <p>Enter this 6-digit code on the sign-in screen:</p>
+    <p class="otp">{{ .Token }}</p>
+    <p>This code expires in 1 hour. Only the newest code works.</p>
+    <p class="muted">
+      Sent to {{ .Email }} for
+      {{ or .Data.institution_name "your sign-in request" }}
+    </p>
+  </body>
+</html>

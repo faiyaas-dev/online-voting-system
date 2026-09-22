@@ -7,11 +7,16 @@ import CreateElectionForm from '@/components/admin/CreateElectionForm'
 import ElectionTable from '@/components/admin/ElectionTable'
 import CandidateApprovalTable from '@/components/admin/CandidateApprovalTable'
 import type { Election, Profile } from '@/lib/supabase/types'
+import { getRoleHome, ROLE_LABEL } from '@/lib/auth/getRoleHome'
 
-export default async function InstitutionAdminPage() {
+export default async function InstitutionAdminPage({
+  searchParams,
+}: {
+  searchParams?: { from?: string }
+}) {
   const supabase = createClient()
   const { data: { user } } = await supabase.auth.getUser()
-  if (!user) redirect('/login')
+  if (!user) redirect('/login?intent=institution_admin')
 
   const { data: profile } = await supabase
     .from('profiles')
@@ -19,7 +24,8 @@ export default async function InstitutionAdminPage() {
     .eq('id', user.id)
     .single<Profile>()
 
-  if (!profile || profile.role !== 'institution_admin') redirect('/')
+  if (!profile) redirect('/login?intent=institution_admin')
+  if (profile.role !== 'institution_admin') redirect(`${getRoleHome(profile.role)}?from=institution-admin`)
 
   const [electionsRes, pendingCandidatesRes] = await Promise.all([
     supabase.from('elections').select('*').order('created_at', { ascending: false }),
@@ -45,10 +51,17 @@ export default async function InstitutionAdminPage() {
           <div>
             <h1 className="text-4xl font-extrabold uppercase tracking-widest">Institution Admin</h1>
             {institution?.name && (
-              <p className="mt-2 text-sm font-bold uppercase tracking-widest text-gray-500">{institution.name}</p>
+              <p className="mt-2 text-sm font-bold uppercase tracking-widest text-gray-500">{institution.name} · {ROLE_LABEL.institution_admin} · full control of this college</p>
             )}
           </div>
         </header>
+        {searchParams?.from && (
+          <div className="border border-yellow-900 bg-yellow-950/20 px-4 py-3">
+            <p className="text-xs font-bold uppercase tracking-widest text-yellow-400">
+              You were redirected from {searchParams.from} — this dashboard is for Institution Admins only.
+            </p>
+          </div>
+        )}
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           <div className="space-y-8">
