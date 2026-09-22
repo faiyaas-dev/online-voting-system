@@ -336,8 +336,8 @@ function LoginContent() {
   }
 
   return (
-    <div className="w-full max-w-md p-8 bg-black border border-gray-800 space-y-6">
-      <h1 className="text-3xl font-extrabold uppercase tracking-widest text-center">Sign in</h1>
+    <div className="w-full max-w-md p-6 sm:p-8 bg-black border border-gray-800 space-y-6">
+      <h1 className="font-display text-3xl font-extrabold uppercase tracking-widest text-center">Sign in</h1>
       <div role="tablist" aria-label="Sign in as" className="grid grid-cols-3 gap-2">
         {(Object.keys(INTENT_LABEL) as LoginIntent[]).map((k) => (
           <button
@@ -346,8 +346,8 @@ function LoginContent() {
             role="tab"
             aria-selected={intent === k}
             onClick={() => switchIntent(k)}
-            className={`min-h-[44px] px-2 py-2 text-[11px] font-bold uppercase tracking-widest border transition-colors ${
-              intent === k ? 'border-white bg-gray-900 text-white' : 'border-gray-800 text-gray-500 hover:text-white'
+            className={`min-h-[44px] px-2 py-2 text-[11px] font-bold uppercase tracking-widest border rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-yellow-400 focus-visible:ring-offset-2 focus-visible:ring-offset-black ${
+              intent === k ? 'border-yellow-400 bg-yellow-400/10 text-yellow-300' : 'border-gray-800 text-gray-500 hover:text-white'
             }`}
           >
             {INTENT_LABEL[k]}
@@ -359,7 +359,7 @@ function LoginContent() {
         {intent === 'institution_admin' && 'Institution Admins: use the email you registered the college with. New here? Register the institution first.'}
         {intent === 'department_admin' && 'Department Admins: use your invited email. You need an invite from your Institution Admin — you cannot self-register.'}
       </p>
-      <Steps step={sent || autoCompleting ? 3 : 1} intent={intent} />
+      <Steps step={autoCompleting ? 3 : sent ? 2 : 1} intent={intent} />
 
       {autoCompleting ? (
         <div className="flex flex-col gap-6 mt-4 items-center">
@@ -380,16 +380,18 @@ function LoginContent() {
               required
               value={email}
               onChange={e => setEmail(e.target.value)}
-              className="bg-transparent border-b border-gray-700 focus:border-white px-0 py-3 text-lg outline-none transition-colors"
+              aria-invalid={error ? true : undefined}
+              aria-describedby={error ? 'login-error' : info ? 'login-info' : undefined}
+              className="bg-transparent border-b border-gray-700 focus:border-yellow-400 px-0 py-3 text-lg outline-none focus-visible:ring-2 focus-visible:ring-yellow-400 focus-visible:ring-offset-2 focus-visible:ring-offset-black transition-colors"
               placeholder="you@example.com"
             />
           </div>
-          {error && <p className="text-red-500 text-sm">{error}</p>}
-          {info && <p className="text-green-400 text-sm">{info}</p>}
+          {error && <p id="login-error" role="alert" className="text-red-400 text-sm">{error}</p>}
+          {info && <p id="login-info" role="status" className="text-green-400 text-sm">{info}</p>}
           <button
             type="submit"
             disabled={loading}
-            className="mt-4 bg-white text-black font-bold uppercase tracking-widest py-4 hover:bg-gray-200 transition-colors disabled:opacity-50"
+            className="mt-4 min-h-[44px] rounded-full bg-yellow-400 text-black font-bold uppercase tracking-widest py-4 shadow-neon-yellow hover:bg-yellow-300 transition-all disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-yellow-200 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
           >
             {loading ? 'Sending…' : 'Send OTP'}
           </button>
@@ -407,7 +409,9 @@ function LoginContent() {
               required
               value={otp}
               onChange={e => setOtp(e.target.value)}
-              className="bg-transparent border-b border-gray-700 focus:border-white px-0 py-3 text-2xl tracking-widest outline-none transition-colors text-center"
+              aria-invalid={error ? true : undefined}
+              aria-describedby={error ? 'login-error' : info ? 'login-info' : undefined}
+              className="bg-transparent border-b border-gray-700 focus:border-yellow-400 px-0 py-3 text-2xl tracking-widest tabular-nums outline-none focus-visible:ring-2 focus-visible:ring-yellow-400 focus-visible:ring-offset-2 focus-visible:ring-offset-black transition-colors text-center"
               placeholder="--------"
               maxLength={10}
               inputMode="numeric"
@@ -500,12 +504,12 @@ function LoginContent() {
               </div>
             </div>
           )}
-          {error && <p className="text-red-500 text-sm">{error}</p>}
-          {info && <p className="text-green-400 text-sm">{info}</p>}
+          {error && <p id="login-error" role="alert" className="text-red-400 text-sm">{error}</p>}
+          {info && <p id="login-info" role="status" className="text-green-400 text-sm">{info}</p>}
           <button
             type="submit"
             disabled={loading}
-            className="mt-4 bg-white text-black font-bold uppercase tracking-widest py-4 hover:bg-gray-200 transition-colors disabled:opacity-50"
+            className="mt-4 min-h-[44px] rounded-full bg-yellow-400 text-black font-bold uppercase tracking-widest py-4 shadow-neon-yellow hover:bg-yellow-300 transition-all disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-yellow-200 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
           >
             {loading ? 'Verifying…' : 'Verify & Sign in'}
           </button>
@@ -528,8 +532,8 @@ function LoginContent() {
 
 export default function LoginPage() {
   return (
-    <main className="flex items-center justify-center min-h-screen bg-black text-white p-6">
-      <Suspense fallback={<div className="text-white">Loading...</div>}>
+    <main className="flex items-start sm:items-center justify-center min-h-screen bg-[#0A0A0B] text-white px-6 py-10">
+      <Suspense fallback={<div className="text-zinc-400 text-sm uppercase tracking-widest">Loading sign in…</div>}>
         <LoginContent />
       </Suspense>
     </main>

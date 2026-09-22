@@ -4,8 +4,9 @@ import GlobalNav from '@/components/GlobalNav'
 import CivicEasterEgg from '@/components/CivicEasterEgg'
 
 export const metadata: Metadata = {
-  title: 'College Election System',
-  description: 'Multi-tenant college election platform',
+  title: 'Vote. | College Elections You Can Trust',
+  description: 'Multi-tenant college election platform — transparent ballots, verified results.',
+  themeColor: '#000000',
 }
 
 export default function RootLayout({
@@ -15,7 +16,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className="min-h-screen bg-black text-white flex flex-col">
+      <body className="min-h-screen bg-[#0A0A0B] text-white antialiased selection:bg-yellow-400 selection:text-black flex flex-col">
         <GlobalNav />
         <div className="flex-1">
           {children}

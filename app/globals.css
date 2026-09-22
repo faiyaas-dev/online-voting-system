@@ -3,11 +3,17 @@
 @tailwind utilities;
 
 /* Keyboard focus system: every student votes, including keyboard-only voters.
-   Square 2px outline matches the brutalist tokens; border-only focus was
-   invisible on buttons and links. */
+   UNITED24 yellow outline stays visible on both dark surfaces and yellow CTAs,
+   where the previous white outline disappeared. */
 :focus-visible {
-  outline: 2px solid #fff;
-  outline-offset: 2px;
+  outline: 2px solid #FFD700;
+  outline-offset: 3px;
+}
+
+/* Civic text selection: yellow highlight, black text. */
+::selection {
+  background: #FFD700;
+  color: #000;
 }
 
 /* Tactile Ballot Card Selection */
@@ -18,12 +24,12 @@
 
 .candidate-card-interactive:hover {
   transform: translateY(-3px) scale(1.01);
-  box-shadow: 0 12px 24px -8px rgba(59, 130, 246, 0.2);
+  box-shadow: 0 12px 24px -8px rgba(255, 215, 0, 0.25);
 }
 
 .candidate-card-selected {
-  border-color: #3b82f6 !important;
-  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.5), 0 10px 25px -5px rgba(59, 130, 246, 0.3) !important;
+  border-color: #FFD700 !important;
+  box-shadow: 0 0 0 2px rgba(255, 215, 0, 0.5), 0 10px 25px -5px rgba(255, 215, 0, 0.3) !important;
   animation: select-pop 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
@@ -55,6 +61,26 @@
   }
 }
 
+/* UNITED24 shared utilities: glass panel, neon text glow, pulse color variants. */
+.glass-panel {
+  background: rgba(255, 255, 255, 0.04);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.text-glow-yellow {
+  text-shadow: 0 0 24px rgba(255, 215, 0, 0.45);
+}
+
+.live-pulse-yellow {
+  color: #FFD700;
+}
+
+.live-pulse-blue {
+  color: #0057B7;
+}
+
 /* Subtle sparkle animation */
 @keyframes sparkle {
   0%, 100% { transform: translateY(-50%) scale(1); opacity: 0; }
@@ -65,7 +91,10 @@
 @media (prefers-reduced-motion: reduce) {
   .candidate-card-interactive,
   .candidate-card-selected,
-  .live-pulse-dot::before {
+  .live-pulse-dot::before,
+  .animate-ticker,
+  .animate-float-up,
+  .animate-pulse-glow {
     animation: none !important;
     transition: none !important;
     transform: none !important;

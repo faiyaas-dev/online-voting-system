@@ -179,7 +179,7 @@ export default function RosterUploadForm({ institutionId }: { institutionId: str
         )}
         {uploadError && <p className="text-red-600 text-sm">{uploadError}</p>}
         {result && <p className="text-sm"><span className="text-green-400">✓ Inserted: <strong>{result.inserted}</strong></span>{result.errors > 0 && <span className="ml-3 text-red-400">✗ Errors: <strong>{result.errors}</strong></span>}</p>}
-        <button type="submit" disabled={loading || !file || !confirmed || Boolean(previewError)} className="min-h-[44px] self-start rounded bg-blue-600 px-4 py-2 text-sm text-white disabled:opacity-50">{loading ? 'Uploading…' : 'Confirm and upload CSV'}</button>
+        <button type="submit" disabled={loading || !file || !confirmed || Boolean(previewError)} className="min-h-[44px] self-start rounded-full bg-yellow-400 px-6 py-2 text-sm font-bold uppercase tracking-widest text-black shadow-neon-yellow hover:bg-yellow-300 transition-all disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-yellow-200 focus-visible:ring-offset-2 focus-visible:ring-offset-black">{loading ? 'Uploading…' : 'Confirm and upload CSV'}</button>
       </form>
 
       {result && result.errors > 0 && (

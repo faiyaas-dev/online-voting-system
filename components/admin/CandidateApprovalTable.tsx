@@ -8,6 +8,7 @@ interface CandidateRow {
   id: string
   status: CandidateStatus
   manifesto: string | null
+  photo_path: string | null
   profiles: { full_name: string | null; roll_no: string | null; department: string | null } | null
   elections: { title: string | null } | null
 }
@@ -92,14 +93,39 @@ export default function CandidateApprovalTable({ candidates }: { candidates: Can
   // Separate pending and decided rows for UI sections. Decided rows move
   // sections immediately (see decide); the rows effect below must NOT clear
   // the pending Undo — the success-note timeout owns that lifecycle.
-  const pendingRows = rows.filter(r => r.status === 'pending')
-  const rejectedRows = rows.filter(r => r.status === 'rejected')
+  const electionTitles = Array.from(new Set(rows.map(r => r.elections?.title ?? '—')))
+  const [electionFilter, setElectionFilter] = useState<string>('all')
+  const visibleRows = rows.filter(r => electionFilter === 'all' || (r.elections?.title ?? '—') === electionFilter)
+  const pendingRows = visibleRows.filter(r => r.status === 'pending')
+  const rejectedRows = visibleRows.filter(r => r.status === 'rejected')
 
-  if (rows.length === 0) return <p className="text-gray-500 text-sm">No pending candidates.</p>
+  if (rows.length === 0) {
+    return (
+      <div className="py-8 text-center">
+        <p className="text-sm text-zinc-500">Queue clear — no pending candidates.</p>
+        <p className="mt-1 text-xs text-zinc-600">New self-nominations will appear here for review.</p>
+      </div>
+    )
+  }
 
   return (
     <div className="flex flex-col gap-4">
       {error && <p role="alert" className="text-red-400 text-sm">{error}</p>}
+      {electionTitles.length > 1 && (
+        <label className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-zinc-400">
+          Election
+          <select
+            value={electionFilter}
+            onChange={e => setElectionFilter(e.target.value)}
+            className="min-h-[44px] bg-white/[0.03] border border-white/15 rounded-full px-4 text-xs font-bold uppercase tracking-widest text-white outline-none focus-visible:ring-2 focus-visible:ring-yellow-400"
+          >
+            <option value="all">All elections ({rows.length})</option>
+            {electionTitles.map(t => (
+              <option key={t} value={t}>{t}</option>
+            ))}
+          </select>
+        </label>
+      )}
 
       {successNote && (
         <p role="alert" className="text-green-400 text-sm mb-3">
@@ -122,15 +148,17 @@ export default function CandidateApprovalTable({ candidates }: { candidates: Can
 
       {/* Pending candidates section */}
       {pendingRows.length > 0 && (
-        <div className="border-b border-gray-800 pb-3 mb-3">
-          <h3 className="text-xs font-semibold uppercase tracking-widest text-gray-400 mb-2">Pending Candidates</h3>
+        <div className="border-b border-white/10 pb-3 mb-3">
+          <h3 className="text-xs font-semibold uppercase tracking-widest text-zinc-400 mb-2">Pending Candidates ({pendingRows.length})</h3>
           {pendingRows.map(c => (
-            <div key={c.id} className="border border-gray-800 bg-transparent p-4">
-              <div className="flex justify-between items-start">
-                <div>
-                  <p className="font-medium text-white">{c.profiles?.full_name ?? 'Unknown'}</p>
-                  <p className="text-xs text-gray-400">{c.profiles?.roll_no} · {c.profiles?.department}</p>
-                  <p className="text-xs text-gray-500">Election: {c.elections?.title ?? '—'}</p>
+            <div key={c.id} className="rounded-2xl border border-white/10 bg-white/[0.02] p-4">
+              <div className="flex justify-between items-start gap-4">
+                <div className="flex gap-3 min-w-0">
+                  <ApprovalPhoto path={c.photo_path} name={c.profiles?.full_name ?? 'Unknown'} />
+                  <div className="min-w-0">
+                    <p className="font-medium text-white">{c.profiles?.full_name ?? 'Unknown'}</p>
+                    <p className="text-xs text-zinc-400">{c.profiles?.roll_no} · {c.profiles?.department}</p>
+                    <p className="text-xs text-zinc-500">Election: {c.elections?.title ?? '—'}</p>
                   {c.manifesto && (
                     <div>
                       <p className={`mt-1 text-sm text-gray-300 ${expandedId === c.id ? 'whitespace-pre-line' : 'line-clamp-3'}`}>{c.manifesto}</p>
@@ -145,11 +173,12 @@ export default function CandidateApprovalTable({ candidates }: { candidates: Can
                       )}
                     </div>
                   )}
+                  </div>
                 </div>
                 <div className="flex gap-2 ml-4 flex-shrink-0">
                   {confirmId === c.id ? (
                     <>
-                      <span className="text-xs text-gray-400 self-center">
+                      <span className="text-xs text-zinc-400 self-center">
                         {confirmAction === 'approved' ? 'Approve?' : 'Reject?'}
                       </span>
                       <button
@@ -194,15 +223,17 @@ export default function CandidateApprovalTable({ candidates }: { candidates: Can
 
       {/* Rejected candidates section */}
       {rejectedRows.length > 0 && (
-        <div className="border-t border-gray-800 pt-3 mt-3">
+        <div className="border-t border-white/10 pt-3 mt-3">
           <h3 className="text-xs font-semibold uppercase tracking-widest text-red-400 mb-2">Rejected Candidates</h3>
           {rejectedRows.map(c => (
-            <div key={c.id} className="border border-gray-800 bg-transparent p-4">
-              <div className="flex justify-between items-start">
-                <div>
-                  <p className="font-medium text-white">{c.profiles?.full_name ?? 'Unknown'}</p>
-                  <p className="text-xs text-gray-400">{c.profiles?.roll_no} · {c.profiles?.department}</p>
-                  <p className="text-xs text-gray-500">Election: {c.elections?.title ?? '—'}</p>
+            <div key={c.id} className="rounded-2xl border border-white/10 bg-white/[0.02] p-4">
+              <div className="flex justify-between items-start gap-4">
+                <div className="flex gap-3 min-w-0">
+                  <ApprovalPhoto path={c.photo_path} name={c.profiles?.full_name ?? 'Unknown'} />
+                  <div className="min-w-0">
+                    <p className="font-medium text-white">{c.profiles?.full_name ?? 'Unknown'}</p>
+                    <p className="text-xs text-zinc-400">{c.profiles?.roll_no} · {c.profiles?.department}</p>
+                    <p className="text-xs text-zinc-500">Election: {c.elections?.title ?? '—'}</p>
                   {c.manifesto && (
                     <div>
                       <p className={`mt-1 text-sm text-gray-300 ${expandedId === c.id ? 'whitespace-pre-line' : 'line-clamp-3'}`}>{c.manifesto}</p>
@@ -217,11 +248,12 @@ export default function CandidateApprovalTable({ candidates }: { candidates: Can
                       )}
                     </div>
                   )}
+                  </div>
                 </div>
                 <div className="flex gap-2 ml-4 flex-shrink-0">
                   {confirmId === c.id ? (
                     <>
-                      <span className="text-xs text-gray-400 self-center">
+                      <span className="text-xs text-zinc-400 self-center">
                         {confirmAction === 'approved' ? 'Reinstate?' : 'Reject?'}
                       </span>
                       <button
@@ -267,4 +299,31 @@ export default function CandidateApprovalTable({ candidates }: { candidates: Can
       )}
     </div>
   )
+}
+
+// Approval photo: signed URL thumbnail so admins review the actual ballot
+// photo, not just the manifesto. Falls back to an initial on signed-URL miss.
+function ApprovalPhoto({ path, name }: { path: string | null; name: string }) {
+  const supabase = createClient()
+  const [url, setUrl] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (!path) return
+    let live = true
+    supabase.storage.from('candidate-photos').createSignedUrl(path, 3600).then(({ data }) => {
+      if (live) setUrl(data?.signedUrl ?? null)
+    })
+    return () => { live = false }
+  }, [path, supabase])
+
+  if (!path || !url) {
+    const initial = (name ?? '?').trim().charAt(0).toUpperCase() || '?'
+    return (
+      <span aria-hidden="true" className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full border border-white/15 bg-white/5 font-display text-lg font-extrabold text-zinc-500">
+        {initial}
+      </span>
+    )
+  }
+  // eslint-disable-next-line @next/next/no-img-element
+  return <img src={url} alt="" aria-hidden="true" className="h-12 w-12 shrink-0 rounded-full border border-white/15 object-cover" />
 }

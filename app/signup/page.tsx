@@ -252,7 +252,7 @@ function SignupContent() {
   }
 
   return (
-    <main className="flex items-center justify-center min-h-screen bg-black text-white p-6">
+    <main className="flex items-center justify-center min-h-screen bg-[#0A0A0B] text-white p-6">
       <div className="w-full max-w-md p-8 bg-black border border-gray-800 space-y-6">
         <h1 className="text-3xl font-extrabold uppercase tracking-widest text-center">Register Institution</h1>
         <p className="text-xs text-gray-500 text-center tracking-wide">
@@ -375,7 +375,7 @@ function SignupContent() {
 
 export default function SignupPage() {
   return (
-    <Suspense fallback={<main className="flex items-center justify-center min-h-screen bg-black text-white p-6"><div>Loading...</div></main>}>
+    <Suspense fallback={<main className="flex items-center justify-center min-h-screen bg-[#0A0A0B] text-white p-6"><div>Loading...</div></main>}>
       <SignupContent />
     </Suspense>
   )

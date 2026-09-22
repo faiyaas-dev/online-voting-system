@@ -26,7 +26,7 @@ export default async function DeptAdminPage({
   if (profile.role !== 'department_admin') redirect(`${getRoleHome(profile.role)}?from=department-admin`)
   if (!profile.department) {
     return (
-      <main className="min-h-screen bg-black text-white p-6 md:p-12">
+      <main className="min-h-screen bg-[#0A0A0B] text-white p-6 md:p-12">
         <div className="max-w-lg mx-auto space-y-4 border border-yellow-900 bg-yellow-950/20 p-8">
           <h1 className="text-xl font-bold uppercase tracking-widest">No department assigned</h1>
           <p className="text-sm text-gray-300">
@@ -64,47 +64,46 @@ export default async function DeptAdminPage({
     : { data: null }
 
   return (
-    <main className="min-h-screen bg-black text-white p-6 md:p-12">
-      <div className="max-w-6xl mx-auto space-y-12">
-        <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6 border-b border-gray-800 pb-6">
+    <main className="min-h-screen bg-[#0A0A0B] text-white p-6 md:p-12">
+      <div className="max-w-6xl mx-auto space-y-8">
+        <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6 border-b border-white/10 pb-6">
           <div>
-            <h1 className="text-4xl font-extrabold uppercase tracking-widest">Department Admin</h1>
-            <p className="text-sm font-bold tracking-widest text-gray-500 uppercase mt-2">
+            <h1 className="font-display text-4xl font-extrabold uppercase tracking-widest">Department Admin</h1>
+            <p className="text-sm font-bold tracking-widest text-zinc-400 uppercase mt-2">
               {institution?.name ? `${institution.name} · ` : ''}Department: {profile.department}
             </p>
           </div>
 
         </header>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          <div className="space-y-8">
-            <section className="border border-gray-800 p-6 md:p-8 space-y-6 bg-transparent">
-              <h2 className="text-xl font-bold uppercase tracking-widest text-gray-300">Create Election (dept-scoped)</h2>
-              <CreateElectionForm
-                institutionId={profile.institution_id!}
-                adminId={profile.id}
-                forceDepartment={profile.department}
-              />
-            </section>
+        {/* ── Queue first: daily work above the episodic create form ── */}
+        <section aria-label="Pending candidates" className="rounded-2xl border border-white/10 bg-white/[0.02] p-6 md:p-8 space-y-6">
+          <h2 className="text-xl font-bold uppercase tracking-widest text-white">Pending Candidates ({(pendingCandidates ?? []).length})</h2>
+          <div className="overflow-x-auto -mx-2 px-2">
+            <CandidateApprovalTable candidates={(pendingCandidates ?? []) as any} />
           </div>
-          
-          <div className="space-y-8">
-            <section className="border border-gray-800 p-6 md:p-8 space-y-6 bg-transparent">
-              <h2 className="text-xl font-bold uppercase tracking-widest text-gray-300">Elections</h2>
-              <p className="text-xs text-gray-500">Showing only elections scoped to “{profile.department}”. If this list is unexpectedly empty, confirm with your institution admin that the spelling matches the roster exactly.</p>
-              <div className="overflow-hidden">
-                <ElectionTable elections={(elections as Election[]) ?? []} />
-              </div>
-            </section>
+        </section>
 
-            <section className="border border-gray-800 p-6 md:p-8 space-y-6 bg-transparent">
-              <h2 className="text-xl font-bold uppercase tracking-widest text-gray-300">Pending Candidates ({(pendingCandidates ?? []).length})</h2>
-              <div className="overflow-hidden">
-                <CandidateApprovalTable candidates={(pendingCandidates ?? []) as any} />
-              </div>
-            </section>
+        <section aria-label="Department elections" className="rounded-2xl border border-white/10 bg-white/[0.02] p-6 md:p-8 space-y-6">
+          <h2 className="text-xl font-bold uppercase tracking-widest text-white">Elections ({(elections ?? []).length})</h2>
+          <p className="text-xs text-zinc-500">Showing only elections scoped to “{profile.department}”. If this list is unexpectedly empty, confirm with your institution admin that the spelling matches the roster exactly.</p>
+          <div className="overflow-x-auto -mx-2 px-2">
+            <ElectionTable elections={(elections as Election[]) ?? []} />
           </div>
-        </div>
+        </section>
+
+        <details className="rounded-2xl border border-white/10 bg-transparent p-6 md:p-8">
+          <summary className="cursor-pointer min-h-[44px] flex items-center text-xl font-bold uppercase tracking-widest text-zinc-300 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-yellow-400 rounded">
+            Create Election (dept-scoped)
+          </summary>
+          <div className="mt-6">
+            <CreateElectionForm
+              institutionId={profile.institution_id!}
+              adminId={profile.id}
+              forceDepartment={profile.department}
+            />
+          </div>
+        </details>
       </div>
     </main>
   )

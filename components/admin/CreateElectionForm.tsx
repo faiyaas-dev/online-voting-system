@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
 
 interface Props {
@@ -21,6 +21,39 @@ export default function CreateElectionForm({ institutionId, adminId, forceDepart
   const [error, setError] = useState('')
   const [success, setSuccess] = useState(false)
   const [yearAcknowledged, setYearAcknowledged] = useState(false)
+  const [scopeAcknowledged, setScopeAcknowledged] = useState(false)
+  const [departments, setDepartments] = useState<string[]>([])
+  const [eligibleCount, setEligibleCount] = useState<number | null>(null)
+
+  // Roster-sourced department allow-list (same source as InviteDeptAdminForm):
+  // free-text departments create elections no roster row can match.
+  useEffect(() => {
+    if (forceDepartment) return
+    let live = true
+    supabase
+      .from('roster')
+      .select('department')
+      .eq('institution_id', institutionId)
+      .then(({ data }) => {
+        if (!live) return
+        const uniq = Array.from(new Set((data ?? []).map(r => r.department).filter(Boolean))).sort()
+        setDepartments(uniq)
+      })
+    return () => { live = false }
+  }, [forceDepartment, institutionId, supabase])
+
+  // Eligibility preview: how many roster rows this scope would match.
+  useEffect(() => {
+    let live = true
+    const t = setTimeout(async () => {
+      let q = supabase.from('roster').select('id', { count: 'exact', head: true }).eq('institution_id', institutionId)
+      if (department.trim()) q = q.eq('department', department.trim())
+      if (year.trim() && !isNaN(parseInt(year, 10))) q = q.eq('year', parseInt(year, 10))
+      const { count } = await q
+      if (live) setEligibleCount(count ?? null)
+    }, 400)
+    return () => { live = false; clearTimeout(t) }
+  }, [department, year, institutionId, supabase])
 
   async function create(e: React.FormEvent) {
     e.preventDefault()
@@ -39,6 +72,13 @@ export default function CreateElectionForm({ institutionId, adminId, forceDepart
     }
     if (closesDate <= opensDate) {
       setError('Close time must be after open time.')
+      setLoading(false)
+      return
+    }
+    // Blast-radius confirm: blank scope = every student in the college votes.
+    if (!department.trim() && !year.trim() && !scopeAcknowledged) {
+      setError('Heads up: blank department and year means institution-wide — every student votes. Submit again to confirm.')
+      setScopeAcknowledged(true)
       setLoading(false)
       return
     }
@@ -76,6 +116,7 @@ export default function CreateElectionForm({ institutionId, adminId, forceDepart
     if (err) { setError(err.message); return }
     setSuccess(true)
     setYearAcknowledged(false)
+    setScopeAcknowledged(false)
     setTimeout(() => { setSuccess(false); setTitle(''); setYear(''); setOpensAt(''); setClosesAt(''); if (!forceDepartment) setDepartment('') }, 2000)
   }
 
@@ -95,16 +136,32 @@ export default function CreateElectionForm({ institutionId, adminId, forceDepart
       </div>
       <div className="flex gap-3 flex-wrap">
         <div className="flex flex-col flex-1">
-          <label htmlFor="department" className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-1">Department</label>
-          <input
-            id="department"
-            type="text"
-            value={department}
-            onChange={e => setDepartment(e.target.value)}
-            placeholder="Department (leave blank for institution-wide)"
-            className="bg-transparent border border-gray-800 text-white placeholder:text-gray-600 px-3 min-h-[44px] text-sm outline-none focus:border-white transition-colors disabled:text-gray-500 disabled:border-gray-800"
-            disabled={!!forceDepartment}
-          />
+          <label htmlFor="department" className="text-xs font-bold uppercase tracking-widest text-zinc-400 mb-1">Department</label>
+          {forceDepartment ? (
+            <input
+              id="department"
+              type="text"
+              value={department}
+              readOnly
+              disabled
+              className="bg-transparent border border-white/10 text-zinc-500 placeholder:text-zinc-600 px-3 min-h-[44px] text-sm outline-none transition-colors disabled:text-zinc-500"
+            />
+          ) : (
+            <select
+              id="department"
+              value={department}
+              onChange={e => { setDepartment(e.target.value); setScopeAcknowledged(false) }}
+              className="min-h-[44px] bg-white/[0.03] border border-white/15 rounded-xl px-3 text-sm text-white outline-none focus-visible:ring-2 focus-visible:ring-yellow-400 transition-colors"
+            >
+              <option value="">Institution-wide (all departments)</option>
+              {departments.map(d => (
+                <option key={d} value={d}>{d}</option>
+              ))}
+            </select>
+          )}
+          {!forceDepartment && departments.length === 0 && (
+            <p className="mt-1 text-[11px] text-zinc-500">No departments in roster yet — upload the roster first so the list fills in.</p>
+          )}
         </div>
         <div className="flex flex-col">
           <label htmlFor="year" className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-1">Year</label>
@@ -142,12 +199,18 @@ export default function CreateElectionForm({ institutionId, adminId, forceDepart
           />
         </div>
       </div>
-      {error && <p className="text-red-400 text-sm">{error}</p>}
-      {success && <p className="text-green-400 text-sm">Election created!</p>}
+      {error && <p role="alert" className="text-red-400 text-sm">{error}</p>}
+      {success && <p role="status" className="text-green-400 text-sm">Election created! It now appears in the elections table above — advance its status when ready.</p>}
+      {eligibleCount !== null && (
+        <p className="font-mono text-xs text-zinc-500" aria-live="polite">
+          Scope preview: ~{eligibleCount} eligible voter{eligibleCount === 1 ? '' : 's'}
+          {eligibleCount === 0 && ' — warning: no roster rows match this scope'}
+        </p>
+      )}
       <button
         type="submit"
         disabled={loading}
-        className="self-start min-h-[44px] bg-white text-black font-bold uppercase tracking-widest px-5 text-sm hover:bg-gray-200 transition-colors disabled:opacity-50"
+        className="self-start min-h-[44px] rounded-full bg-yellow-400 text-black font-bold uppercase tracking-widest px-6 text-sm shadow-neon-yellow hover:bg-yellow-300 transition-all disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-yellow-200 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
       >
         {loading ? 'Creating…' : 'Create Election'}
       </button>

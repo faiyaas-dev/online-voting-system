@@ -64,7 +64,7 @@ export default async function PlatformAdminPage({
   const csvHref = `data:text/csv;charset=utf-8,${encodeURIComponent(csvLines.join('\r\n'))}`
 
   return (
-    <main className="min-h-screen bg-black text-white p-6 md:p-12">
+    <main className="min-h-screen bg-[#0A0A0B] text-white p-6 md:p-12">
       <div className="max-w-7xl mx-auto space-y-12">
         <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6 border-b border-gray-800 pb-6">
           <div>

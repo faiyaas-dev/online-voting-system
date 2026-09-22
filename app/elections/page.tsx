@@ -6,12 +6,22 @@ import LiveCountdown from '@/components/LiveCountdown'
 
 function statusBadge(status: Election['status']) {
   const map: Record<string, string> = {
-    draft: 'border-gray-700 text-gray-500',
-    nomination_open: 'border-yellow-500 text-yellow-500',
-    voting_open: 'border-green-500 text-green-500',
-    closed: 'border-red-500 text-red-500',
+    draft: 'border-white/20 text-zinc-400 bg-white/5',
+    nomination_open: 'border-yellow-400/50 text-yellow-300 bg-yellow-400/10 shadow-[0_0_12px_rgba(255,215,0,0.25)]',
+    voting_open: 'border-green-400/50 text-green-300 bg-green-400/10 shadow-[0_0_12px_rgba(74,222,128,0.3)]',
+    closed: 'border-white/20 text-zinc-400 bg-white/5',
   }
-  return map[status] || 'border-gray-700 text-gray-500'
+  return map[status] || 'border-white/20 text-zinc-400 bg-white/5'
+}
+
+function statusLabel(status: Election['status']) {
+  const map: Record<string, string> = {
+    draft: '■ Draft',
+    nomination_open: '◷ Nominations',
+    voting_open: '● Live',
+    closed: '■ Closed',
+  }
+  return map[status] || status.replace('_', ' ')
 }
 
 export default async function ElectionsPage({
@@ -32,7 +42,7 @@ export default async function ElectionsPage({
   if (!profile) redirect('/login?intent=voter')
 
   // RLS already filters elections by eligibility
-  const { data: elections } = await supabase
+  const { data: elections, error: electionsError } = await supabase
     .from('elections')
     .select('*')
     .order('opens_at', { ascending: false })
@@ -73,74 +83,84 @@ export default async function ElectionsPage({
   }
 
   return (
-    <main className="min-h-screen bg-black text-white p-6 md:p-12">
+    <main className="min-h-screen bg-[#0A0A0B] text-white p-6 md:p-12">
       <div className="max-w-4xl mx-auto space-y-12">
         {searchParams?.from && (
-          <div className="border border-yellow-900 bg-yellow-950/20 px-4 py-3">
+          <div className="rounded-2xl border border-yellow-900 bg-yellow-950/20 px-4 py-3">
             <p className="text-xs font-bold uppercase tracking-widest text-yellow-400">
               You were redirected from {searchParams.from} — your role lands here. Manage elections from your admin dashboard instead.
             </p>
           </div>
         )}
-        <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6 border-b border-gray-800 pb-6">
-          <h1 className="text-4xl font-extrabold uppercase tracking-widest">Elections</h1>
+        <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6 border-b border-white/10 pb-6">
+          <h1 className="font-display text-4xl font-extrabold uppercase tracking-widest">Elections</h1>
         </header>
 
-        {(!elections || elections.length === 0) ? (
-          <div className="py-12 text-center text-gray-500 uppercase tracking-widest text-sm font-bold border border-gray-900 border-dashed">
-            No elections currently available.
+        {electionsError ? (
+          <div className="py-10 px-6 text-center rounded-2xl border border-red-900 bg-red-950/20" role="alert">
+            <p className="text-sm font-bold uppercase tracking-widest text-red-400">Couldn&apos;t load elections</p>
+            <p className="mt-2 text-xs text-zinc-400">Check your connection and refresh. If this persists, your account may not be linked to a roster — contact your institution admin.</p>
+          </div>
+        ) : (!elections || elections.length === 0) ? (
+          <div className="py-16 px-6 text-center rounded-2xl border border-dashed border-white/15 bg-white/[0.02]">
+            <p className="text-sm font-bold uppercase tracking-widest text-zinc-300">No elections for you right now</p>
+            <p className="mt-2 text-xs text-zinc-500">None match your department and year, or none are open yet. Check back soon — or confirm your college email is on the roster.</p>
           </div>
         ) : (
           <ul className="space-y-6">
             {(elections ?? []).map((e: Election) => (
-              <li key={e.id} className="border border-gray-800 bg-transparent p-6 sm:p-8 hover:border-gray-600 transition-colors">
+              <li key={e.id} className={`relative rounded-2xl border border-white/10 bg-white/[0.03] backdrop-blur p-6 sm:p-8 hover:border-yellow-400/50 hover:shadow-neon-yellow transition-all ${e.status === 'voting_open' ? 'before:absolute before:left-0 before:top-0 before:h-full before:w-1 before:rounded-l-2xl before:bg-green-400' : ''}`}>
                 <div className="flex flex-col sm:flex-row justify-between items-start gap-4">
                   <div className="space-y-2">
                     <h2 className="font-bold text-2xl uppercase tracking-wider">{e.title}</h2>
-                    <div className="flex flex-col gap-1 text-xs uppercase tracking-widest text-gray-400 font-bold">
+                    <div className="flex flex-col gap-1 text-xs uppercase tracking-widest text-zinc-400 font-bold">
                       <span>{e.scope_department ? `Dept: ${e.scope_department}` : 'Institution-wide'}{e.scope_year ? ` · Year ${e.scope_year}` : ''}</span>
-                      <span>{new Date(e.opens_at).toLocaleDateString()} — {new Date(e.closes_at).toLocaleDateString()}</span>
+                      <span title={`Opens ${new Date(e.opens_at).toLocaleString()} · Closes ${new Date(e.closes_at).toLocaleString()}`}>{new Date(e.opens_at).toLocaleDateString()} — {new Date(e.closes_at).toLocaleDateString()}</span>
                       {e.status === 'voting_open' && (
-                        <span className="text-green-400">
-                          <LiveCountdown closesAt={e.closes_at} />
-                        </span>
+                        <LiveCountdown closesAt={e.closes_at} />
                       )}
                       {e.status === 'nomination_open' && (
-                        <span className="text-yellow-400">
-                          <LiveCountdown closesAt={e.closes_at} label="Nominations close in" closedLabel="Nominations closed" />
-                        </span>
+                        <LiveCountdown closesAt={e.closes_at} label="Nominations close in" closedLabel="Nominations closed" />
                       )}
                     </div>
                   </div>
                   <div className="flex flex-wrap items-center gap-2">
-                    <span className={`text-[10px] px-3 py-1 uppercase font-bold tracking-widest border ${statusBadge(e.status)}`}>
-                      {e.status.replace('_', ' ')}
+                    <span className={`text-[10px] px-3 py-1 uppercase font-bold tracking-widest border rounded-full ${statusBadge(e.status)}`}>
+                      {statusLabel(e.status)}
                     </span>
                     {e.status === 'closed' && turnoutMap[e.id] && (
-                      <span className="text-[10px] px-3 py-1 uppercase font-bold tracking-widest border border-gray-700 text-gray-300">
+                      <span className="text-[10px] px-3 py-1 uppercase font-bold tracking-widest border rounded-full border-white/15 bg-white/5 text-white font-mono">
                         {turnoutMap[e.id]}
                       </span>
                     )}
                   </div>
                 </div>
                 <div className="mt-8 flex flex-wrap gap-3">
-                  <Link href={`/elections/${e.id}/candidates`} className="inline-flex items-center min-h-[44px] px-4 py-2 text-[11px] font-bold uppercase tracking-widest text-white border border-gray-700 hover:border-white transition-colors">
-                    View Candidates
-                  </Link>
-                  {e.status === 'nomination_open' && (
-                    <Link href={`/elections/${e.id}/nominate`} className="inline-flex items-center min-h-[44px] px-4 py-2 text-[11px] font-bold uppercase tracking-widest text-yellow-500 border border-yellow-900 hover:border-yellow-500 transition-colors">
-                      Self-Nominate
-                    </Link>
-                  )}
-                  {e.status === 'voting_open' && (
-                    <Link href={`/elections/${e.id}/vote`} className="inline-flex items-center min-h-[44px] px-4 py-2 text-[11px] font-bold uppercase tracking-widest text-green-500 border border-green-900 hover:border-green-500 transition-colors">
-                      Vote Now
-                    </Link>
-                  )}
-                  {e.status === 'closed' && (
-                    <Link href={`/elections/${e.id}/results`} className="inline-flex items-center min-h-[44px] px-4 py-2 text-[11px] font-bold uppercase tracking-widest text-gray-400 border border-gray-800 hover:text-white hover:border-white transition-colors">
-                      Results
-                    </Link>
+                  {e.status === 'voting_open' ? (
+                    <>
+                      <Link href={`/elections/${e.id}/vote`} className="inline-flex items-center min-h-[44px] px-5 py-2 rounded-full text-[11px] font-bold uppercase tracking-widest bg-yellow-400 text-black hover:bg-yellow-300 shadow-neon-yellow transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-yellow-200 focus-visible:ring-offset-2 focus-visible:ring-offset-black">
+                        Vote Now
+                      </Link>
+                      <Link href={`/elections/${e.id}/candidates`} className="inline-flex items-center min-h-[44px] px-4 py-2 rounded-full text-[11px] font-bold uppercase tracking-widest text-zinc-400 border border-white/10 hover:text-white hover:border-white/30 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-yellow-400">
+                        Meet the candidates
+                      </Link>
+                    </>
+                  ) : (
+                    <>
+                      <Link href={`/elections/${e.id}/candidates`} className="inline-flex items-center min-h-[44px] px-4 py-2 rounded-full text-[11px] font-bold uppercase tracking-widest text-white border border-white/20 hover:border-white transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-yellow-400">
+                        View Candidates
+                      </Link>
+                      {e.status === 'nomination_open' && (
+                        <Link href={`/elections/${e.id}/nominate`} className="inline-flex items-center min-h-[44px] px-4 py-2 rounded-full text-[11px] font-bold uppercase tracking-widest text-yellow-300 border border-yellow-400/40 bg-yellow-400/10 hover:border-yellow-400 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-yellow-400">
+                          Self-Nominate
+                        </Link>
+                      )}
+                      {e.status === 'closed' && (
+                        <Link href={`/elections/${e.id}/results`} className="inline-flex items-center min-h-[44px] px-4 py-2 rounded-full text-[11px] font-bold uppercase tracking-widest text-zinc-300 border border-white/15 hover:text-white hover:border-white transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-yellow-400">
+                          Results
+                        </Link>
+                      )}
+                    </>
                   )}
                 </div>
               </li>

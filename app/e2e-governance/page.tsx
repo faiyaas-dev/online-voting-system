@@ -20,12 +20,14 @@ const APPROVE_CANDIDATE: {
   id: string
   status: CandidateStatus
   manifesto: string | null
+  photo_path: string | null
   profiles: { full_name: string | null; roll_no: string | null; department: string | null }
   elections: { title: string | null }
 } = {
   id: 'c0000000-0000-4000-8000-000000000001',
   status: 'pending',
   manifesto: 'Harness manifesto for the approve arm.',
+  photo_path: null,
   profiles: { full_name: 'Harness Approve', roll_no: 'H-001', department: 'CSE' },
   elections: { title: 'Harness Election' },
 }
@@ -34,6 +36,7 @@ const REJECT_CANDIDATE: typeof APPROVE_CANDIDATE = {
   id: 'c0000000-0000-4000-8000-000000000002',
   status: 'pending',
   manifesto: 'Harness manifesto for the reject arm.',
+  photo_path: null,
   profiles: { full_name: 'Harness Reject', roll_no: 'H-002', department: 'EEE' },
   elections: { title: 'Harness Election' },
 }
@@ -55,7 +58,7 @@ export default function GovernanceHarnessPage() {
   if (process.env.NODE_ENV === 'production') notFound()
 
   return (
-    <main className="min-h-screen bg-black text-white p-6">
+    <main className="min-h-screen bg-[#0A0A0B] text-white p-6">
       <h1 className="text-xl font-bold uppercase tracking-widest">Governance harness</h1>
       <section aria-label="Approve candidate" className="mt-6">
         <CandidateApprovalTable candidates={[APPROVE_CANDIDATE]} />
